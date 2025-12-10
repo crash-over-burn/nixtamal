@@ -371,23 +371,17 @@ module Hash = struct
 	let codec : t Util.KDL.codec = {
 		to_kdl = (fun hash ->
 			let open Kdl in
-			if hash.algorithm != Input.Hash.default_algorithm || Option.is_some hash.expected then
-				let props =
-					match hash.expected with
-					| None -> []
-					| Some exp_hash ->
-						["expected", (None, `String exp_hash)]
-				in
-				let props =
-					if hash.algorithm != Input.Hash.default_algorithm then
-						let algo_str = Input.Hash.algorithm_to_string hash.algorithm in
-						("algorithm", (None, `String algo_str)) :: props
-					else
-						props
-				in
-					[node "hash" ~props []]
-			else
-					[]
+			let props =
+				match hash.expected with
+				| None -> []
+				| Some exp_hash ->
+					["expected", (None, `String exp_hash)]
+			in
+			let props =
+				let algo_str = Input.Hash.algorithm_to_string hash.algorithm in
+				("algorithm", (None, `String algo_str)) :: props
+			in
+				[node "hash" ~props []]
 		);
 		of_kdl = (fun kdl ->
 			let open Util.KDL.L in

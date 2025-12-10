@@ -45,6 +45,7 @@ Default ``manifest.kdl``
 			archive {
 				url "https://github.com/NixOS/nixpkgs/archive/{{cmd_value}}.tar.gz"
 			}
+			hash algorithm=SHA256
 			latest-cmd {
 				$ git ls-remote --heads "https://github.com/NixOS/nixpkgs.git" --refs "refs/heads/nixos-unstable"
 				| cut -f1
