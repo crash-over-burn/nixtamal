@@ -117,19 +117,19 @@ module Git = struct
 		type t = Input.Git.Reference.t
 		[@@deriving show, eq, qcheck]
 
-		let codec : t Util.KDL.node_codec = {
-			to_node = (fun ref ->
+		let codec : t Util.KDL.codec = {
+			to_kdl = (fun ref ->
 				let open Kdl in
 				match ref with
-				| `Branch b -> Kdl.node "branch" ~args: [arg (`String b)] []
-				| `Ref r -> Kdl.node "ref" ~args: [arg (`String r)] []
+				| `Branch b -> [Kdl.node "branch" ~args: [arg (`String b)] []]
+				| `Ref r -> [Kdl.node "ref" ~args: [arg (`String r)] []]
 			);
-			of_node = (fun kdl ->
+			of_kdl = (fun kdl ->
 				let open Util.KDL.L in
 				let open Util.KDL.Valid in
 				let node_names = ["branch"; "ref"]
-				and branch = ll @@ kdl.@(child "branch" // arg 0 // string_value)
-				and ref = ll @@ kdl.@(child "ref" // arg 0 // string_value)
+				and branch = ll @@ kdl.@(node "branch" // arg 0 // string_value)
+				and ref = ll @@ kdl.@(node "ref" // arg 0 // string_value)
 				in
 				match branch, ref with
 				| Ok b, Error _ -> Ok (`Branch b)
@@ -199,7 +199,7 @@ module Git = struct
 					| Error (`Not_found ("lfs", _)) -> Ok false
 					| Error err -> Error err
 			and+ reference =
-				Reference.codec.of_node git
+				Reference.codec.of_kdl git.children
 			in
 				{repository; mirrors; reference; submodules; lfs}
 		);
