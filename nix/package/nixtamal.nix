@@ -81,6 +81,7 @@ ocamlPackages.buildDunePackage {
       kdl
       logs
       ppx_deriving
+      ppx_deriving_qcheck
       saturn
       uri
    ]);
@@ -96,6 +97,8 @@ ocamlPackages.buildDunePackage {
 
    checkInputs = with ocamlPackages; [
       alcotest
+      qcheck
+      qcheck-alcotest
    ];
 
    passthru.tests.version = testers.testVersion {

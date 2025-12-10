@@ -17,7 +17,21 @@
  (name nixtamal)
  (synopsis "Fulfilling Nix version pinning")
  (description "TODO")
- (depends aloctest cmdliner eio eio_main fmt jingoo jsont kdl logs uri)
+ (depends
+  cmdliner
+  eio
+  eio_main
+  fmt
+  jingoo
+  jsont
+  kdl
+  logs
+  ppx_deriving
+  ppx_deriving_qcheck
+  uri
+  (alcotest :with-test)
+  (qcheck :with-test)
+  (qcheck-alcotest :with-test))
  (tags ("nix")))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html

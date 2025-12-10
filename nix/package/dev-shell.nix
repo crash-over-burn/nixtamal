@@ -23,6 +23,8 @@ mkShell {
       topiary
 
       ocamlPackages.alcotest
+      ocamlPackages.qcheck
+      ocamlPackages.qcheck-alcotest
       ocamlPackages.ocaml-lsp
       ocamlformat-rpc-bin # 💢 why does the LSP depend on ocamlformat‽
    ];

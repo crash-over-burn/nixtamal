@@ -1,6 +1,6 @@
 (test
  (name test_main)
- (libraries nixtamal alcotest))
+ (libraries nixtamal alcotest ppx_deriving_qcheck qcheck))
 
 (test
  (name test_nixtamal))

@@ -10,12 +10,26 @@ let filename = "lock.json"
 
 let encode_tag = Util.Jsont.encode_tag
 
+module Uri = struct
+	include Uri
+	(* good enough for this *)
+	let gen =
+		let open QCheck.Gen in
+		let a_to_z = (char_range 'a' 'z') in
+		let* scheme = QCheck.Gen.oneofl ["http"; "https"; "ftp"; "sftp"] in
+		let* host = string_size ~gen: a_to_z (int_bound 20) in
+		let* tld = string_size ~gen: a_to_z (int_bound 5) in
+		let* path_opt = option (string_size ~gen: a_to_z (int_bound 10)) in
+		let uri = Uri.of_string Fmt.(str "%s://%s.%s/%a" scheme host tld (option string) path_opt) in
+		return uri
+end
+
 module File = struct
 	type t = {
 		url: Uri.t;
 		mirrors: Uri.t list;
 	}
-	[@@deriving show]
+	[@@deriving show, qcheck]
 
 	let [@inline]to_lock
 			~(models : Input.jg_models2)
@@ -43,7 +57,7 @@ module Archive = struct
 		url: Uri.t;
 		mirrors: Uri.t list;
 	}
-	[@@deriving show]
+	[@@deriving show, qcheck]
 
 	let [@inline]to_lock ~(models : Input.jg_models2) ({url; mirrors; _}: Input.Archive.t) : t =
 		let to_uri = Fun.compose Uri.of_string (Input.Template.fill ~models) in
@@ -100,7 +114,7 @@ module Git = struct
 		lfs: bool;
 		latest_revision: string option;
 	}
-	[@@deriving show]
+	[@@deriving show, qcheck]
 
 	let [@inline]to_lock
 			~(models : Input.jg_models2)
@@ -138,7 +152,7 @@ end
 module Darcs = struct
 	module Reference = struct
 		type t = Input.Darcs.Reference.t
-		[@@deriving show]
+		[@@deriving show, qcheck]
 
 		let jsont : t Jsont.t =
 			let open Jsont in
@@ -193,7 +207,7 @@ module Darcs = struct
 		reference: Reference.t;
 		latest_weak_hash: string option;
 	}
-	[@@deriving show]
+	[@@deriving show, qcheck]
 
 	let [@inline]to_lock
 			~(models : Input.jg_models2)
@@ -262,7 +276,7 @@ module Pijul = struct
 		(*reference: Reference.t;*)
 		latest_state: string option;
 	}
-	[@@deriving show]
+	[@@deriving show, qcheck]
 
 	let [@inline]to_lock
 			~(models : Input.jg_models2)
@@ -298,7 +312,7 @@ module Kind = struct
 		| `Darcs of Darcs.t
 		| `Pijul of Pijul.t
 	]
-	[@@deriving show]
+	[@@deriving show, qcheck]
 
 	let to_lock ~(models : Input.jg_models2) : Input.Kind.t -> t = function
 		| `File f -> `File (File.to_lock ~models f)
@@ -348,7 +362,7 @@ end
 
 module Hash = struct
 	type algorithm = Input.Hash.algorithm
-	[@@deriving show]
+	[@@deriving show, qcheck]
 
 	let algorithm_jsont =
 		let gen_algo i =
@@ -364,7 +378,7 @@ module Hash = struct
 		algorithm: algorithm;
 		value: string option;
 	}
-	[@@deriving show]
+	[@@deriving show, qcheck]
 
 	let [@inline]to_lock ({algorithm; value; _}: Input.Hash.t) : t =
 		{algorithm; value}
@@ -385,7 +399,7 @@ module Input' = struct
 		hash: Hash.t;
 		latest_value: string option;
 	}
-	[@@deriving show]
+	[@@deriving show, qcheck]
 
 	let [@inline]to_lock ~(models : Input.jg_models2) (input : Input.t) : t = {
 		kind = Kind.to_lock ~models input.kind;
@@ -402,11 +416,14 @@ module Input' = struct
 		|> Object.finish
 end
 
+type inputs = Input'.t NameMap.t
+[@@deriving show, qcheck]
+
 type t = {
 	version: string;
-	inputs: Input'.t NameMap.t;
+	inputs: inputs;
 }
-[@@deriving show]
+[@@deriving show, qcheck]
 
 let lockfile : t option ref = ref None
 

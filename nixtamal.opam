@@ -8,7 +8,6 @@ license: "GPL-3.0-or-later"
 tags: ["nix"]
 depends: [
   "dune" {>= "3.20"}
-  "aloctest"
   "cmdliner"
   "eio"
   "eio_main"
@@ -17,7 +16,12 @@ depends: [
   "jsont"
   "kdl"
   "logs"
+  "ppx_deriving"
+  "ppx_deriving_qcheck"
   "uri"
+  "alcotest" {with-test}
+  "qcheck" {with-test}
+  "qcheck-alcotest" {with-test}
   "odoc" {with-doc}
 ]
 build: [

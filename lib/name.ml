@@ -6,7 +6,7 @@ module Name = struct
 	type t =
 		Name of string
 	[@@unboxed]
-	[@@deriving eq]
+	[@@deriving eq, qcheck]
 
 	let [@inline]make n = Name n
 	let [@inline]take (Name n) = n
@@ -36,8 +36,18 @@ module NameHashtbl : sig
 	end
 = Hashtbl.Make(struct
 	type t = Name.t
+
 	let equal = Name.equal
+
 	let hash n = Hashtbl.hash (Name.take n)
+
+	let gen gen_val =
+		let open QCheck.Gen in
+		let* n = int_bound 32 in
+		let* vals = list_size (return n) (pair Name.gen gen_val) in
+		let htbl = Hashtbl.create n in
+		List.iter (fun (k, v) -> Hashtbl.add htbl k v) vals;
+		return htbl
 end)
 
 module NameMap = struct
@@ -56,6 +66,12 @@ module NameMap = struct
 			(fun ppf (key, value) -> Fmt.pf ppf "%s ↦ %a" (Name.take key) pp_value value)
 			fmt
 			(bindings map)
+
+	let gen gen_val =
+		let open QCheck.Gen in
+		let* n = int_bound 32 in
+		let* vals = list_size (return n) (pair Name.gen gen_val) in
+		return (List.fold_left (fun m (k, v) -> Impl.add k v m) Impl.empty vals)
 
 	let jsont ?kind ?doc (type' : 'a Jsont.t) : 'a t Jsont.t =
 		let name_map =
