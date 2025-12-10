@@ -208,7 +208,23 @@ end
 
 module Darcs = struct
 	module Reference = struct
-		type t = Input.Darcs.Reference.t
+		type context_grounds = [
+			| `Assumed of UTF8.t option
+			| `Stated of UTF8.t
+		]
+		[@@deriving show, eq]
+
+		let gen_context_grounds =
+			let open QCheck.Gen in
+			oneof [
+				return (`Assumed None);
+				map (fun s -> `Stated s) UTF8.gen;
+			]
+
+		type t = [
+			| `Context of context_grounds
+			| `Tag of UTF8.t
+		]
 		[@@deriving show, eq, qcheck]
 
 		let codec : t Util.KDL.codec = {
