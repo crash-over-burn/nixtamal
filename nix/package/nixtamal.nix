@@ -1,0 +1,95 @@
+#──────────────────────────────────────────────────────────────────────────────┐
+# SPDX-FileCopyrightText: 2025 toastal <https://toast.al/contact/>             │
+# SPDX-License-Identifier: LGPL-2.1-or-later                                   │
+#──────────────────────────────────────────────────────────────────────────────┘
+{
+   lib,
+   coreutils,
+   python3Packages,
+   nix-prefetch-darcs,
+   nix-prefetch-git,
+   nix-prefetch-pijul,
+   ocamlPackages,
+}:
+
+ocamlPackages.buildDunePackage {
+   pname = "nixtamal";
+   version = "0.0.1-alpha.1";
+
+   src =
+      let
+         fs = lib.fileset;
+
+         ocaml_project =
+            file:
+            lib.lists.elem file.name [
+               "dune"
+               "dune-project"
+               "dune-workspace"
+            ]
+            || file.hasExt "opam";
+
+         ocaml_src =
+            file:
+            lib.lists.any file.hasExt [
+               "ml"
+               "mld"
+               "mli"
+               "mly"
+            ];
+      in
+      fs.toSource {
+         root = ../..;
+         fileset = fs.unions [
+            ../../LICENSE.txt
+            (fs.fileFilter (file: file.hasExt "txt") ../../license)
+            (fs.fileFilter ocaml_project ../..)
+            (fs.fileFilter ocaml_src ../../bin)
+            (fs.fileFilter ocaml_src ../../lib)
+            (fs.fileFilter ocaml_src ../../test)
+         ];
+      };
+
+   nativeBuildInputs = [
+      python3Packages.docutils
+      # NOTE: no KDL support
+      python3Packages.pygments
+   ];
+
+   buildInputs = [
+      # required since the prefetcher scripts presently don’t specify all of
+      # their inputs
+      coreutils
+      nix-prefetch-darcs
+      nix-prefetch-git
+      nix-prefetch-pijul
+   ]
+   ++ (with ocamlPackages; [
+      cmdliner
+      eio
+      eio_main
+      fmt
+      jingoo
+      (jsont.override {
+         withBrr = false;
+         withBytesrw = true;
+      })
+      kdl
+      logs
+      ppx_deriving
+      saturn
+      uri
+   ]);
+
+   doCheck = false; # TODO
+
+   checkInputs = with ocamlPackages; [
+      alcotest
+   ];
+
+   meta = {
+      license = with lib.licenses; [ gpl3Plus ];
+      platforms = lib.platforms.unix;
+      mainProgram = "nixtamal";
+   };
+}
