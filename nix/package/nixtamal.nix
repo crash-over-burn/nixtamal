@@ -50,6 +50,7 @@ ocamlPackages.buildDunePackage {
             (fs.fileFilter ocaml_src ../../bin)
             (fs.fileFilter ocaml_src ../../lib)
             (fs.fileFilter ocaml_src ../../test)
+            ../../doc/manifest.rst
          ];
       };
 

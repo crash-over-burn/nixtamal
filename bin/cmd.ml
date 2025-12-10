@@ -8,6 +8,8 @@ let prefixed_env_info ?doc ?deprecated var =
 let common_man = [
 	`S "BUGS";
 	`P "During alpha, contact the maker directly or join the XMPP MUC.";
+	`S "SEE ALSO";
+	`I ("nixtamal-manifest(5)", "manifest.kdl format (TODO: & schema)");
 ]
 
 module Global = struct

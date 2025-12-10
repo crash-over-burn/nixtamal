@@ -1,0 +1,17 @@
+(rule
+ (with-stdout-to
+  nixtamal.1
+  (run %{bin:nixtamal} --help=groff)))
+
+(rule
+ (targets nixtamal-manifest.5)
+ (deps manifest.rst)
+ (action
+  (with-stdout-to
+   nixtamal-manifest.5
+   (run rst2man --halt=4 --no-generator --language=en %{dep:manifest.rst}))))
+
+(install
+ (package nixtamal)
+ (section man)
+ (files nixtamal.1 nixtamal-manifest.5))

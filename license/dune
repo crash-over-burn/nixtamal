@@ -1,0 +1,6 @@
+(install
+ (package nixtamal)
+ (section doc)
+ (files
+  (glob_files
+   (*.txt with_prefix license))))
