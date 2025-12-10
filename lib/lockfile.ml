@@ -417,7 +417,7 @@ let jsont : t Jsont.t =
 	|> Object.mem "i" (NameMap.jsont ~kind: "Input" Input'.jsont) ~enc: (fun i -> i.inputs)
 	|> Object.finish
 
-let make ?(version = "0.0.1") () =
+let make ?(version = "0.1.0") () =
 	Logs.info (fun m -> m "Making lockfile @@ version:%s …" version);
 	let inputs =
 		Input_foreman.to_lockfile (fun input ->
