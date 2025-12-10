@@ -10,7 +10,7 @@ module Template = struct
 	type t =
 		Template of string
 	[@@unboxed]
-	[@@deriving show, qcheck]
+	[@@deriving show, eq, qcheck]
 
 	let [@inline]make t = Template t
 	let [@inline]take (Template t) = t
@@ -22,16 +22,16 @@ module Latest = struct
 	module Cmd = struct
 		type 'a non_empty_list =
 				('a * 'a list)
-		[@@deriving show, qcheck]
+		[@@deriving show, eq, qcheck]
 
 		type cmd = {
 			prog: Template.t;
 			args: Template.t list;
 		}
-		[@@deriving show, make, qcheck]
+		[@@deriving show, eq, make, qcheck]
 
 		type t = cmd non_empty_list
-		[@@deriving show, qcheck]
+		[@@deriving show, eq, qcheck]
 
 		let (~$) x = (x, [])
 		let (|:) (x, xs) x' = (x, x' :: xs)
@@ -42,7 +42,7 @@ module Latest = struct
 		cmd: Cmd.t option;
 		value: string option;
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 end
 
 (* KINDS **********************************************************************)
@@ -52,7 +52,7 @@ module File = struct
 		url: Template.t;
 		mirrors: Template.t list;
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 end
 
 module Archive = struct
@@ -60,7 +60,7 @@ module Archive = struct
 		url: Template.t;
 		mirrors: Template.t list;
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 end
 
 module Git = struct
@@ -69,7 +69,7 @@ module Git = struct
 			| `Branch of string
 			| `Ref of string
 		]
-		[@@deriving show, qcheck]
+		[@@deriving show, eq, qcheck]
 	end
 
 	type t = {
@@ -81,7 +81,7 @@ module Git = struct
 		lfs: bool; [@default false]
 		latest_revision: string option;
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 
 	let default_latest_cmd git : Latest.Cmd.t =
 		let open Latest.Cmd in
@@ -102,13 +102,13 @@ module Darcs = struct
 			| `Assumed of string option
 			| `Stated of string
 		]
-		[@@deriving show, qcheck]
+		[@@deriving show, eq, qcheck]
 
 		type t = [
 			| `Context of context_grounds
 			| `Tag of string
 		]
-		[@@deriving show, qcheck]
+		[@@deriving show, eq, qcheck]
 	end
 
 	type t = {
@@ -118,7 +118,7 @@ module Darcs = struct
 		datetime: string option; (* ISO 8601 RFC 3339 *)
 		latest_weak_hash: string option;
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 
 	let pp fmt t = Fmt.pf fmt "%s" (show t)
 end
@@ -130,7 +130,7 @@ module Pijul = struct
 			| `State of string
 			| `Change of string
 		]
-		[@@deriving show, qcheck]
+		[@@deriving show, eq, qcheck]
 	end
 
 	type t = {
@@ -140,7 +140,7 @@ module Pijul = struct
 		datetime: string option; (* ISO 8601 RFC 3339 *)
 		latest_state: string option;
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 end
 
 module Hash = struct
@@ -175,7 +175,7 @@ module Hash = struct
 		(* used to assert in fetching for manually-updated pins *)
 		expected: string option;
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 end
 
 (* INPUT *******************************************************************)
@@ -188,7 +188,7 @@ module Kind = struct
 		| `Darcs of Darcs.t
 		| `Pijul of Pijul.t
 	]
-	[@@deriving show, qcheck]
+	[@@deriving show, eq, qcheck]
 end
 
 let make_kind_file ~url ?mirrors () =
@@ -215,7 +215,7 @@ type t = {
 	hash: Hash.t; [@default Hash.make ()]
 	frozen: bool; [@default false]
 }
-[@@deriving show, make, qcheck]
+[@@deriving show, eq, make, qcheck]
 
 let latest_cmd (input : t) : Latest.Cmd.t option =
 	match input.latest.cmd with

@@ -39,7 +39,7 @@ module File = struct
 		url: Template.t;
 		mirrors: Template.t list;
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 
 	let [@inline]to_manifest ({url; mirrors; _}: Input.File.t) : t =
 		make ~url ~mirrors ()
@@ -78,7 +78,7 @@ module Archive = struct
 		url: Template.t;
 		mirrors: Template.t list;
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 
 	let [@inline]to_manifest ({url; mirrors; _}: Input.Archive.t) : t =
 		make ~url ~mirrors ()
@@ -115,7 +115,7 @@ end
 module Git = struct
 	module Reference = struct
 		type t = Input.Git.Reference.t
-		[@@deriving show, qcheck]
+		[@@deriving show, eq, qcheck]
 
 		let codec : t Util.KDL.node_codec = {
 			to_node = (fun ref ->
@@ -147,7 +147,7 @@ module Git = struct
 		submodules: bool; [@default false]
 		lfs: bool; [@default false]
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 
 	let [@inline]to_manifest ({repository; mirrors; reference; submodules; lfs; _}: Input.Git.t) : t =
 		make ~repository ~mirrors ~reference ~submodules ~lfs ()
@@ -209,7 +209,7 @@ end
 module Darcs = struct
 	module Reference = struct
 		type t = Input.Darcs.Reference.t
-		[@@deriving show, qcheck]
+		[@@deriving show, eq, qcheck]
 
 		let codec : t Util.KDL.codec = {
 			to_kdl = (fun ref ->
@@ -240,7 +240,7 @@ module Darcs = struct
 		mirrors: Template.t list;
 		reference: Reference.t;
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 
 	let [@inline]to_manifest ({repository; mirrors; reference; _}: Input.Darcs.t) : t =
 		make ~repository ~mirrors ~reference ()
@@ -281,7 +281,7 @@ end
 module Pijul = struct
 	module Reference = struct
 		type t = Input.Pijul.Reference.t
-		[@@deriving show, qcheck]
+		[@@deriving show, eq, qcheck]
 
 		let codec : t Util.KDL.node_codec = {
 			to_node = (fun ref ->
@@ -314,7 +314,7 @@ module Pijul = struct
 		mirrors: Template.t list;
 		reference: Reference.t;
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 
 	let [@inline]to_manifest ({remote; mirrors; reference; _}: Input.Pijul.t) : t =
 		make ~remote ~mirrors ~reference ()
@@ -360,7 +360,7 @@ module Hash = struct
 		algorithm: Input.Hash.algorithm; [@default Input.Hash.default_algorithm]
 		expected: string option;
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 
 	let [@inline]to_manifest ({algorithm; expected; _}: Input.Hash.t) : t =
 		make ~algorithm ?expected ()
@@ -441,7 +441,7 @@ module Kind = struct
 		| `Darcs of Darcs.t
 		| `Pijul of Pijul.t
 	]
-	[@@deriving show, qcheck]
+	[@@deriving show, eq, qcheck]
 
 	let to_manifest : Input.Kind.t -> t = function
 		| `File f -> `File (File.to_manifest f)
@@ -498,7 +498,7 @@ module Input' = struct
 		hash: Hash.t;
 		frozen: bool; [@default false]
 	}
-	[@@deriving show, make, qcheck]
+	[@@deriving show, eq, make, qcheck]
 
 	let [@inline]to_manifest (input : Input.t) : t = {
 		name = input.name;
@@ -623,7 +623,7 @@ type t = {
 	version: string;
 	inputs: Input'.t list;
 }
-[@@deriving show, make, qcheck]
+[@@deriving show, eq, make, qcheck]
 
 let document_to_t (doc : Kdl.t) : t Util.KDL.Valid.t =
 	let open Util.KDL.L in

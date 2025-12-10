@@ -29,7 +29,7 @@ module File = struct
 		url: Uri.t;
 		mirrors: Uri.t list;
 	}
-	[@@deriving show, qcheck]
+	[@@deriving show, eq, qcheck]
 
 	let [@inline]to_lock
 			~(models : Input.jg_models2)
@@ -57,7 +57,7 @@ module Archive = struct
 		url: Uri.t;
 		mirrors: Uri.t list;
 	}
-	[@@deriving show, qcheck]
+	[@@deriving show, eq, qcheck]
 
 	let [@inline]to_lock ~(models : Input.jg_models2) ({url; mirrors; _}: Input.Archive.t) : t =
 		let to_uri = Fun.compose Uri.of_string (Input.Template.fill ~models) in
@@ -114,7 +114,7 @@ module Git = struct
 		lfs: bool;
 		latest_revision: string option;
 	}
-	[@@deriving show, qcheck]
+	[@@deriving show, eq, qcheck]
 
 	let [@inline]to_lock
 			~(models : Input.jg_models2)
@@ -152,7 +152,7 @@ end
 module Darcs = struct
 	module Reference = struct
 		type t = Input.Darcs.Reference.t
-		[@@deriving show, qcheck]
+		[@@deriving show, eq, qcheck]
 
 		let jsont : t Jsont.t =
 			let open Jsont in
@@ -207,7 +207,7 @@ module Darcs = struct
 		reference: Reference.t;
 		latest_weak_hash: string option;
 	}
-	[@@deriving show, qcheck]
+	[@@deriving show, eq, qcheck]
 
 	let [@inline]to_lock
 			~(models : Input.jg_models2)
@@ -276,7 +276,7 @@ module Pijul = struct
 		(*reference: Reference.t;*)
 		latest_state: string option;
 	}
-	[@@deriving show, qcheck]
+	[@@deriving show, eq, qcheck]
 
 	let [@inline]to_lock
 			~(models : Input.jg_models2)
@@ -312,7 +312,7 @@ module Kind = struct
 		| `Darcs of Darcs.t
 		| `Pijul of Pijul.t
 	]
-	[@@deriving show, qcheck]
+	[@@deriving show, eq, qcheck]
 
 	let to_lock ~(models : Input.jg_models2) : Input.Kind.t -> t = function
 		| `File f -> `File (File.to_lock ~models f)
@@ -362,7 +362,7 @@ end
 
 module Hash = struct
 	type algorithm = Input.Hash.algorithm
-	[@@deriving show, qcheck]
+	[@@deriving show, eq, qcheck]
 
 	let algorithm_jsont =
 		let gen_algo i =
@@ -378,7 +378,7 @@ module Hash = struct
 		algorithm: algorithm;
 		value: string option;
 	}
-	[@@deriving show, qcheck]
+	[@@deriving show, eq, qcheck]
 
 	let [@inline]to_lock ({algorithm; value; _}: Input.Hash.t) : t =
 		{algorithm; value}
@@ -399,7 +399,7 @@ module Input' = struct
 		hash: Hash.t;
 		latest_value: string option;
 	}
-	[@@deriving show, qcheck]
+	[@@deriving show, eq, qcheck]
 
 	let [@inline]to_lock ~(models : Input.jg_models2) (input : Input.t) : t = {
 		kind = Kind.to_lock ~models input.kind;
@@ -417,13 +417,13 @@ module Input' = struct
 end
 
 type inputs = Input'.t NameMap.t
-[@@deriving show, qcheck]
+[@@deriving show, eq, qcheck]
 
 type t = {
 	version: string;
 	inputs: inputs;
 }
-[@@deriving show, qcheck]
+[@@deriving show, eq, qcheck]
 
 let lockfile : t option ref = ref None
 
