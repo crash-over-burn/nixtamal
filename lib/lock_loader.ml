@@ -98,7 +98,8 @@ let pp_nix_named_args fmt args =
 let pp_cfg (ppf : Format.formatter) =
 	pp_nix_named_args ppf [
 		("system", Some "builtins.currentSystem");
-		("bootstrap-nixpkgs-name", Some "null");
+		("nixpkgs", Some "null");
+		("bootstrap-nixpkgs-lock-name", Some "null");
 	]
 
 (* TODO: consider *not* doing manually as this is ugly AF, but would probably
@@ -201,14 +202,17 @@ let pp_body ~version (ppf : Format.formatter) () =
 	pf ppf {|		else@.|};
 	pf ppf {|			throw "Unsupported input kind “${builtins.toString k}”.";@.|};
 	pf ppf {|@.|};
-	pf ppf {|	nixpkgs = builtin-to-input "nixpkgs-for-nixtamal" (@.|};
-	pf ppf {|		if builtins.isNull bootstrap-nixpkgs-name then@.|};
-	pf ppf {|			lock.i.nixpkgs-nixtamal or lock.i.nixpkgs@.|};
-	pf ppf {|		else@.|};
-	pf ppf {|			lock.i.${bootstrap-nixpkgs-name}@.|};
-	pf ppf {|	);@.|};
+	pf ppf {|	nixpkgs' = if builtins.isNull nixpkgs then@.|};
+	pf ppf {|		builtin-to-input "nixpkgs-for-nixtamal" (@.|};
+	pf ppf {|			if builtins.isString bootstrap-nixpkgs-lock-name then@.|};
+	pf ppf {|				lock.i.${bootstrap-nixpkgs-lock-name}@.|};
+	pf ppf {|			else@.|};
+	pf ppf {|				lock.i.nixpkgs-nixtamal or lock.i.nixpkgs@.|};
+	pf ppf {|		)@.|};
+	pf ppf {|	else@.|};
+	pf ppf {|		nixpkgs;@.|};
 	pf ppf {|@.|};
-	pf ppf {|	pkgs = import nixpkgs {inherit system;};@.|};
+	pf ppf {|	pkgs = import nixpkgs' {inherit system;};@.|};
 	pf ppf {|@.|};
 	pf ppf {|	inherit (pkgs) lib;@.|};
 	pf ppf {|@.|};

@@ -193,7 +193,7 @@ See choices at the `maker’s website <https://toast.al/funding>`_.
 
 .. [1] :ac:`WIP` with upstream Nixpkgs
 
-	• Darcs: https://github.com/NixOS/nixpkgs/pull/467172
-	• Pijul: https://github.com/NixOS/nixpkgs/pull/467890
+	• :del:`Darcs: https://github.com/NixOS/nixpkgs/pull/467172`
+	• :del:`Pijul: https://github.com/NixOS/nixpkgs/pull/467890`
 
 .. vim: set textwidth=80
