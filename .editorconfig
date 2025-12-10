@@ -19,3 +19,7 @@ indent_size = unset
 [*.nix]
 indent_style = space
 indent_size = 3
+
+[dune,dune-project,dune-workspace]
+indent_style = space
+indent_size = 1
