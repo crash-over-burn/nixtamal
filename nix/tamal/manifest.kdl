@@ -1,3 +1,6 @@
+// ┏┓╻+╻ ╱┏┳┓┏┓┏┳┓┏┓╻
+// ┃┃┃┃┗━┓╹┃╹┣┫┃┃┃┣┫┃   Read the manpage:
+// ╹┗┛╹╱ ╹ ╹ ╹╹╹ ╹╹╹┗┛  $ man nixtamal-manifest
 version "0.1.0"
 inputs {
 	nixpkgs {

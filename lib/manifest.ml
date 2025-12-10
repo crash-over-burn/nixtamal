@@ -711,6 +711,13 @@ let write () : (unit, error) result =
 	Logs.app (fun m -> m "Writing manifest @@ %s …" filename);
 	let result =
 		Eio.Path.with_open_out ~create: (`Exclusive 0o644) filepath @@ fun flow ->
+		let banner = [
+			Cstruct.of_string "// ┏┓╻+╻ ╱┏┳┓┏┓┏┳┓┏┓╻\n";
+			Cstruct.of_string "// ┃┃┃┃┗━┓╹┃╹┣┫┃┃┃┣┫┃   Read the manpage:\n";
+			Cstruct.of_string "// ╹┗┛╹╱ ╹ ╹ ╹╹╹ ╹╹╹┗┛  $ man nixtamal-manifest\n";
+		]
+		in
+		Eio.Flow.write flow banner;
 		Util.KDL.to_flow flow mnfst;
 		Eio.Flow.write flow ([Cstruct.of_string "\n"])
 	in

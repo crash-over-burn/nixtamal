@@ -1,3 +1,7 @@
+..
+	┏┓╻+╻ ╱┏┳┓┏┓┏┳┓┏┓╻
+	┃┃┃┃┗━┓╹┃╹┣┫┃┃┃┣┫┃
+	╹┗┛╹╱ ╹ ╹ ╹╹╹ ╹╹╹┗┛
 ================================================================================
 Nixtamal
 ================================================================================
@@ -75,6 +79,9 @@ Set up
 .. code:: console
 
 	$ nixtamal set-up
+	┏┓╻+╻ ╱┏┳┓┏┓┏┳┓┏┓╻
+	┃┃┃┃┗━┓╹┃╹┣┫┃┃┃┣┫┃
+	╹┗┛╹╱ ╹ ╹ ╹╹╹ ╹╹╹┗┛
 	Creating Nixtamal directory @ ./nix/tamal
 	Writing new Nixtamal EditorConfig @ ./nix/tamal/.editorconfig …
 	Fetching latest value for 「nixpkgs」 …

@@ -91,6 +91,7 @@ let set_up ~env ?nixpkgs: nixpkgs_opt () : (unit, error) result =
 	let (let*) = Result.bind in
 	Eio.Switch.run @@ fun sw ->
 	let proc_mgr = Eio.Stdenv.process_mgr env in
+	Logs.app (fun m -> m "%t@." Banner.pp);
 	Working_directory.set_up_root ();
 	if Manifest.exists () then
 		begin
