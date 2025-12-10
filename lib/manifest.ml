@@ -299,21 +299,21 @@ module Pijul = struct
 		type t = Input.Pijul.Reference.t
 		[@@deriving show, eq, qcheck]
 
-		let codec : t Util.KDL.node_codec = {
-			to_node = (fun ref ->
+		let codec : t Util.KDL.codec = {
+			to_kdl = (fun ref ->
 				let open Kdl in
 				match ref with
-				| `Channel c -> Kdl.node "channel" ~args: [arg (`String c)] []
-				| `State s -> Kdl.node "state" ~args: [arg (`String s)] []
-				| `Change c -> Kdl.node "change" ~args: [arg (`String c)] []
+				| `Channel c -> [Kdl.node "channel" ~args: [arg (`String c)] []]
+				| `State s -> [Kdl.node "state" ~args: [arg (`String s)] []]
+				| `Change c -> [Kdl.node "change" ~args: [arg (`String c)] []]
 			);
-			of_node = (fun kdl ->
+			of_kdl = (fun kdl ->
 				let open Util.KDL.L in
 				let open Util.KDL.Valid in
 				let node_names = ["channel"; "state"; "change"]
-				and channel = ll @@ kdl.@(child "channel" // arg 0 // string_value)
-				and state = ll @@ kdl.@(child "state" // arg 0 // string_value)
-				and change = ll @@ kdl.@(child "change" // arg 0 // string_value)
+				and channel = ll @@ kdl.@(node "channel" // arg 0 // string_value)
+				and state = ll @@ kdl.@(node "state" // arg 0 // string_value)
+				and change = ll @@ kdl.@(node "change" // arg 0 // string_value)
 				in
 				match channel, state, change with
 				| Ok c, Error _, Error _ -> Ok (`Channel c)
@@ -344,10 +344,7 @@ module Pijul = struct
 			let remote =
 				node "remote" ~args: [Template.to_arg pijul.remote] []
 			and nodes =
-				match pijul.reference with
-				| `Channel c -> [Kdl.node "channel" ~args: [arg (`String c)] []]
-				| `State c -> [Kdl.node "state" ~args: [arg (`String c)] []]
-				| `Change c -> [Kdl.node "change" ~args: [arg (`String c)] []]
+				Reference.codec.to_kdl pijul.reference
 			in
 			let nodes =
 				if List.is_empty pijul.mirrors then
@@ -364,7 +361,7 @@ module Pijul = struct
 			let* pijul = ll @@ kdl.@(node "pijul") in
 			let+ remote = Template.of_child ~name: "remote" pijul
 			and+ mirrors = Template.of_mirrors pijul
-			and+ reference = Reference.codec.of_node pijul
+			and+ reference = Reference.codec.of_kdl pijul.children
 			in
 				{remote; mirrors; reference}
 		);
