@@ -1,0 +1,25 @@
+/_build
+
+/result
+/result-*
+/.direnv
+/.envrc
+
+/tmp
+/logs
+
+# NO to Microsoft
+devcontainer.json
+.*.code-workspace
+.devcontainer
+.github
+.vscode
+
+# NO to Docker
+Dockerfile
+docker-compose
+
+# NO to invasive configs
+.husky
+.pre-commit-config.yaml
+.pre-commit-config.yml
