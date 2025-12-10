@@ -1,0 +1,15 @@
+Nixtamal is multi-licensed
+
+• All executables produced & associated OCaml bin code are under the terms of
+  GNU General Public License, version 3.0 or later (GPL-3.0-or-later).
+• All other OCaml library & testing code is under the terms of the GNU Lesser
+  General Public License v2.1 or later (LGPL-2.1-or-later) with the OCaml LGPL
+  Linking Exception (OCaml-LGPL-linking-exception).
+• All Nix-related code is under the terms of the GNU Lesser General Public
+  License, version 2.1 or later (LGPL-2.1-or-later).
+• Generated code, configuration, & other files from the executable for use in
+  other projects are under the terms of the ISC License (ISC).
+• Schemas are under the terms of Creative Commons Attribution Share Alike 4.0
+  International (CC-BY-SA-4.0).
+
+See `license/` for full texts.

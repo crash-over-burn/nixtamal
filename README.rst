@@ -50,6 +50,22 @@ Future goals:
 • provide a flake-like specification for project layout, but with less holes
 
 
+License
+===============================================================================
+
+Depending on the content, this project is licensed under one of
+
+• :t:`GNU General Public License, version 3.0 later` (``GPL-3.0-or-later``)
+• :t:`GNU Lesser General Public License version 2.1 or later`
+  (``LGPL-2.1-or-later``) with & without the :t:`OCaml LGPL Linking Exception`
+  (``OCaml-LGPL-linking-exception``)
+• :t:`ISC License` (``ISC``)
+• :t:`Creative Commons Attribution-ShareAlike 4.0 International`
+  (``CC-BY-SA-4.0``)
+
+For details read ``LICENSE.txt`` with full license texts at ``license/``.
+
+
 Pitching in
 ================================================================================
 
