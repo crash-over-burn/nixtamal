@@ -1,0 +1,6 @@
+(test
+ (name test_main)
+ (libraries nixtamal alcotest))
+
+(test
+ (name test_nixtamal))

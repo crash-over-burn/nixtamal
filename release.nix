@@ -20,5 +20,10 @@ in
 
    inherit (pkgs.nixtamal) default;
 
-   shell = pkgs.nixtamal-dev-shell;
+   shell = pkgs.nixtamal.dev-shell;
+
+   test = {
+      inherit (pkgs.nixtamal) tests;
+   };
+
 }

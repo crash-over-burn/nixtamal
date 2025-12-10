@@ -10,11 +10,14 @@
    nix-prefetch-git,
    nix-prefetch-pijul,
    ocamlPackages,
+   testers,
+   nixtamal,
 }:
 
 ocamlPackages.buildDunePackage {
    pname = "nixtamal";
    version = "0.0.1-alpha.1";
+   release_year = 2025;
 
    src =
       let
@@ -81,11 +84,23 @@ ocamlPackages.buildDunePackage {
       uri
    ]);
 
-   doCheck = false; # TODO
+   postPatch = ''
+      substituteInPlace bin/main.ml \
+         --subst-var version
+      substituteInPlace lib/lock_loader.ml \
+         --subst-var release_year
+   '';
+
+   doCheck = true;
 
    checkInputs = with ocamlPackages; [
       alcotest
    ];
+
+   passthru.tests.version = testers.testVersion {
+      package = nixtamal;
+      command = "${nixtamal.meta.mainProgram} --version";
+   };
 
    meta = {
       license = with lib.licenses; [ gpl3Plus ];
