@@ -1,0 +1,13 @@
+version "0.1.0"
+inputs {
+	nixpkgs {
+		archive {
+			url "https://github.com/NixOS/nixpkgs/archive/{{cmd_value}}.tar.gz"
+		}
+		latest-cmd {
+			$ git ls-remote --heads "https://github.com/NixOS/nixpkgs.git" --refs "refs/heads/nixpkgs-unstable"
+			| cut -f1
+		}
+	}
+}
+
