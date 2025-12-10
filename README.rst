@@ -59,7 +59,6 @@ Future goals:
 • migrations from prior manifest × lockfile versions
 • migrations from Flakes, Npins, & Niv
 • more :ac:`VCS`\s
-• trying to get mirror support for :ac:`VCS`\s upstreamed into Nixpkgs
 • ``nixtamal heal`` for common pitfalls in ``manifest.kdl``
 • :ac:`TUI`?
 • provide a flake-like specification for project layout, but with less holes
@@ -67,8 +66,8 @@ Future goals:
 .. warning::
 
 	As this software is in the alpha stage, the maker reserves the right make
-	breaking changes file schemas & :ac:`CLI` :ac:`API`. Additionally, anything after
-	tagged, the maker reserves the right to obliterate & amend patches.
+	breaking changes file schemas & :ac:`CLI` :ac:`API`. Additionally, anything
+	after tagged, the maker reserves the right to obliterate & amend patches.
 
 Quickstart
 ===============================================================================
@@ -82,6 +81,7 @@ Set up
 	┏┓╻+╻ ╱┏┳┓┏┓┏┳┓┏┓╻
 	┃┃┃┃┗━┓╹┃╹┣┫┃┃┃┣┫┃
 	╹┗┛╹╱ ╹ ╹ ╹╹╹ ╹╹╹┗┛
+
 	Creating Nixtamal directory @ ./nix/tamal
 	Writing new Nixtamal EditorConfig @ ./nix/tamal/.editorconfig …
 	Fetching latest value for 「nixpkgs」 …
@@ -153,7 +153,7 @@ Building
 .. code:: console
 
 	$ nix-shell -p darcs \
-		--run "darcs clone 'https://darcs.toastal.in.th/nixtamal/trunk/' nixtamal"
+		--run "darcs clone https://darcs.toastal.in.th/nixtamal/trunk/ nixtamal"
 	$ cd nixtamal
 	$ nix-build
 
