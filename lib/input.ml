@@ -8,7 +8,7 @@ type jg_models2 = string -> Jingoo.Jg_types.tvalue
 
 module Template = struct
 	type t =
-		Template of string
+		Template of UTF8.t
 	[@@unboxed]
 	[@@deriving show, eq, qcheck]
 
@@ -40,7 +40,7 @@ module Latest = struct
 
 	type t = {
 		cmd: Cmd.t option;
-		value: string option;
+		value: UTF8.t option;
 	}
 	[@@deriving show, eq, make, qcheck]
 end
@@ -66,8 +66,8 @@ end
 module Git = struct
 	module Reference = struct
 		type t = [
-			| `Branch of string
-			| `Ref of string
+			| `Branch of UTF8.t
+			| `Ref of UTF8.t
 		]
 		[@@deriving show, eq, qcheck]
 	end
@@ -76,10 +76,10 @@ module Git = struct
 		repository: Template.t;
 		mirrors: Template.t list;
 		reference: Reference.t;
-		datetime: string option; (* ISO 8601 RFC 3339 *)
+		datetime: UTF8.t option; (* ISO 8601 RFC 3339 *)
 		submodules: bool; [@default false]
 		lfs: bool; [@default false]
-		latest_revision: string option;
+		latest_revision: UTF8.t option;
 	}
 	[@@deriving show, eq, make, qcheck]
 
@@ -99,14 +99,14 @@ end
 module Darcs = struct
 	module Reference = struct
 		type context_grounds = [
-			| `Assumed of string option
-			| `Stated of string
+			| `Assumed of UTF8.t option
+			| `Stated of UTF8.t
 		]
 		[@@deriving show, eq, qcheck]
 
 		type t = [
 			| `Context of context_grounds
-			| `Tag of string
+			| `Tag of UTF8.t
 		]
 		[@@deriving show, eq, qcheck]
 	end
@@ -115,8 +115,8 @@ module Darcs = struct
 		repository: Template.t;
 		mirrors: Template.t list;
 		reference: Reference.t;
-		datetime: string option; (* ISO 8601 RFC 3339 *)
-		latest_weak_hash: string option;
+		datetime: UTF8.t option; (* ISO 8601 RFC 3339 *)
+		latest_weak_hash: UTF8.t option;
 	}
 	[@@deriving show, eq, make, qcheck]
 
@@ -126,9 +126,9 @@ end
 module Pijul = struct
 	module Reference = struct
 		type t = [
-			| `Channel of string
-			| `State of string
-			| `Change of string
+			| `Channel of UTF8.t
+			| `State of UTF8.t
+			| `Change of UTF8.t
 		]
 		[@@deriving show, eq, qcheck]
 	end
@@ -137,8 +137,8 @@ module Pijul = struct
 		remote: Template.t;
 		mirrors: Template.t list;
 		reference: Reference.t;
-		datetime: string option; (* ISO 8601 RFC 3339 *)
-		latest_state: string option;
+		datetime: UTF8.t option; (* ISO 8601 RFC 3339 *)
+		latest_state: UTF8.t option;
 	}
 	[@@deriving show, eq, make, qcheck]
 end
@@ -171,9 +171,9 @@ module Hash = struct
 		algorithm: algorithm;
 			[@default default_algorithm]
 		(* None is for not yet calculated *)
-		value: string option;
+		value: UTF8.t option;
 		(* used to assert in fetching for manually-updated pins *)
-		expected: string option;
+		expected: UTF8.t option;
 	}
 	[@@deriving show, eq, make, qcheck]
 end

@@ -371,7 +371,7 @@ end
 module Hash = struct
 	type t = {
 		algorithm: Input.Hash.algorithm; [@default Input.Hash.default_algorithm]
-		expected: string option;
+		expected: UTF8.t option;
 	}
 	[@@deriving show, eq, make, qcheck]
 
@@ -409,13 +409,13 @@ module Hash = struct
 						| Some av -> Ok (Some av)
 						| None ->
 							let len : int = Input.Hash.max_algorithm - Input.Hash.min_algorithm + 1
-							and algo_str (i : int) : string =
+							and algo_str (i : int) : UTF8.t =
 								i + Input.Hash.min_algorithm
 								|> Input.Hash.algorithm_of_enum
 								|> Option.get
 								|> Input.Hash.algorithm_to_string
 							in
-							let algo_str_list : string list = List.init len algo_str in
+							let algo_str_list : UTF8.t list = List.init len algo_str in
 							Logs.err (fun m ->
 								m
 									"Got hash algorithm “%s”, but exepected one of %a"
@@ -428,7 +428,7 @@ module Hash = struct
 				| Error (`Missing_prop "algorithm") -> ll @@ Ok !default_hash_algorithm
 				| Error err -> ll @@ Error err
 
-			and+ expected : string option =
+			and+ expected : UTF8.t option =
 				ll @@
 					match hash.@(prop "expected") with
 					| Ok exp -> map Option.some @@ exp.@(string_value)
@@ -627,7 +627,7 @@ module Input' = struct
 end
 
 type t = {
-	version: string;
+	version: UTF8.t;
 	inputs: Input'.t list;
 }
 [@@deriving show, eq, make, qcheck]
@@ -649,7 +649,7 @@ let document_to_t (doc : Kdl.t) : t Util.KDL.Valid.t =
 			Error errs
 	in
 	let () = default_hash_algorithm := manifest_default_hash_algorithm in
-	let+ version : string =
+	let+ version : UTF8.t =
 		ll @@ doc.@(node "version" // arg 0 // string_value)
 	and+ inputs : Input'.t list =
 		(* TODO: a lens would mean this could use `each` *)

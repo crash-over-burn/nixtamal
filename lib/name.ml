@@ -4,7 +4,7 @@
 └─────────────────────────────────────────────────────────────────────────────*)
 module Name = struct
 	type t =
-		Name of string
+		Name of UTF8.t
 	[@@unboxed]
 	[@@deriving eq, qcheck]
 
