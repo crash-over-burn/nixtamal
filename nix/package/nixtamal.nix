@@ -69,6 +69,7 @@ ocamlPackages.buildDunePackage {
       nix-prefetch-pijul
    ]
    ++ (with ocamlPackages; [
+      camomile
       cmdliner
       eio
       eio_main

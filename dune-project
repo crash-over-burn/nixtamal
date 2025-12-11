@@ -18,6 +18,7 @@
  (synopsis "Fulfilling Nix version pinning")
  (description "TODO")
  (depends
+  camomile
   cmdliner
   eio
   eio_main

@@ -1,7 +1,17 @@
 (library
  (public_name nixtamal)
  (name nixtamal)
- (libraries eio eio_main jingoo jsont jsont.bytesrw kdl logs saturn uri)
+ (libraries
+  camomile
+  eio
+  eio_main
+  jingoo
+  jsont
+  jsont.bytesrw
+  kdl
+  logs
+  saturn
+  uri)
  (preprocess
   (pps
    ppx_deriving.enum
