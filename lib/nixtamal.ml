@@ -20,10 +20,11 @@ let meld_input_with_lock (input : Input.t) (lock : Lockfile.Input'.t) : Input.t 
 			`File file
 		| `Archive archive, `Archive _ ->
 			`Archive archive
-		| `Git git, `Git({latest_revision; _}: Lockfile.Git.t) ->
-			`Git {git with latest_revision}
-		| `Darcs darcs, `Darcs({reference; latest_weak_hash; _}: Lockfile.Darcs.t) ->
+		| `Git git, `Git({datetime; latest_revision; _}: Lockfile.Git.t) ->
+			`Git {git with datetime; latest_revision}
+		| `Darcs darcs, `Darcs({datetime; reference; latest_weak_hash; _}: Lockfile.Darcs.t) ->
 			`Darcs {darcs with
+				datetime;
 				latest_weak_hash;
 				reference = (
 					match darcs.reference, reference with
@@ -31,8 +32,8 @@ let meld_input_with_lock (input : Input.t) (lock : Lockfile.Input'.t) : Input.t 
 					| _ -> darcs.reference
 				);
 			}
-		| `Pijul pijul, `Pijul({latest_state; _}: Lockfile.Pijul.t) ->
-			`Pijul {pijul with latest_state}
+		| `Pijul pijul, `Pijul({datetime; latest_state; _}: Lockfile.Pijul.t) ->
+			`Pijul {pijul with datetime; latest_state}
 		| _, _ -> failwith "Input kind mismatch."
 	);
 	hash = {input.hash with value = lock.hash.value};
