@@ -287,7 +287,7 @@ module Darcs = struct
 			let* darcs = ll @@ kdl.@(node "darcs") in
 			let+ repository = Template.of_child ~name: "repository" darcs
 			and+ mirrors = Template.of_mirrors darcs
-			and+ reference = Reference.codec.of_kdl kdl
+			and+ reference = Reference.codec.of_kdl darcs.children
 			in
 				{repository; mirrors; reference}
 		);
