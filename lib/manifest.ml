@@ -639,7 +639,7 @@ module Input' = struct
 				match Hash.codec.of_kdl input.children with
 				| Ok h ->
 					Ok h
-				| Error (`Not_found ("hash", _) :: []) ->
+				| Error [`Not_found ("hash", _)] ->
 					Ok (Hash.make ?algorithm: !default_hash_algorithm ())
 				| Error errs ->
 					Error errs
