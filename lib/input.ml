@@ -115,8 +115,6 @@ module Darcs = struct
 		latest_weak_hash: UTF8.t option;
 	}
 	[@@deriving show, eq, make, qcheck]
-
-	let pp fmt t = Fmt.pf fmt "%s" (show t)
 end
 
 module Pijul = struct
