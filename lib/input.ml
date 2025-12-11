@@ -292,7 +292,9 @@ let jg_models2 (input : t) (needle : string) : Jingoo.Jg_types.tvalue =
 				htbl
 			end
 	in
-	try Hashtbl.find hashtbl needle with Not_found -> Tnull
+	match Hashtbl.find_opt hashtbl needle with
+	| Some value -> value
+	| None -> Tnull
 
 (* NIXPKGS ********************************************************************)
 
