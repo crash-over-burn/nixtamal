@@ -5,8 +5,8 @@
 open Alcotest
 open Nixtamal
 
-let suite = [
-	test_case "Manifest latest-cmd to KDL" `Quick (fun () ->
+let suite =
+	[test_case "Manifest latest-cmd to KDL" `Quick (fun () ->
 		let kdl = testable Kdl.pp Kdl.equal in
 		let open Nixtamal.Input.Latest.Cmd in
 		let t = Input.Template.make in
@@ -129,4 +129,28 @@ let suite = [
 		in
 		check input "Frozen Pijul KDL roundrip" out_input in_input
 	);
-]
+	] @
+		List.map QCheck_alcotest.to_alcotest [
+			QCheck.Test.make
+				~name: "Manifest input codec sameshape"
+				(QCheck.make ~print: (Fmt.str "%a" Manifest.Input'.pp) Manifest.Input'.gen)
+				(fun input ->
+					let back_and_forth =
+						input
+						|> Manifest.Input'.codec.to_node
+						|> Manifest.Input'.codec.of_node
+					in
+					match back_and_forth with
+					| Ok input' when input' = input ->
+						true
+					| Ok input' ->
+						QCheck.Test.fail_reportf
+							"Aimed for:@,%a@.@.But got:@,%a@."
+							Manifest.Input'.pp
+							input
+							Manifest.Input'.pp
+							input'
+					| Error err ->
+						QCheck.Test.fail_reportf "%a" Fmt.(list ~sep: semi Util.KDL.Valid.pp_err) err;
+				);
+		]
