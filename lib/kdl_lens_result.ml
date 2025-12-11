@@ -15,7 +15,6 @@ type lerr = [
 	| `Cannot_each
 	| `Cannot_replace
 	| `Missing_annot
-	| `Missing_arg of string
 	| `Missing_index of int
 	| `Missing_prop of string
 	| `Missing_top
@@ -38,7 +37,6 @@ let pp_lerr fmt = function
 	| `Cannot_each -> Fmt.pf fmt "Cannot each"
 	| `Cannot_replace -> Fmt.pf fmt "Cannot replace"
 	| `Missing_annot -> Fmt.pf fmt "Missing annotation"
-	| `Missing_arg arg -> Fmt.pf fmt "Missing argument “%s”" arg
 	| `Missing_prop prop -> Fmt.pf fmt "Missing property “%s”" prop
 	| `Missing_index idx -> Fmt.pf fmt "Missing index “%d”" idx
 	| `Missing_top -> Fmt.pf fmt "Missing top-level node"
