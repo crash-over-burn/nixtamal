@@ -153,4 +153,29 @@ let suite =
 					| Error err ->
 						QCheck.Test.fail_reportf "%a" Fmt.(list ~sep: semi Util.KDL.Valid.pp_err) err;
 				);
+			QCheck.Test.make
+				~name: "Input sameshape"
+				(QCheck.make ~print: (Fmt.str "%a" Input.pp) Input.gen)
+				(fun input ->
+					let manifest_input =
+						Manifest.Input'.to_manifest input
+					and lockfile_input =
+						let models = Input.jg_models2 input in
+						Lockfile.Input'.to_lock ~models input
+					in
+					let melded =
+						meld_input_with_lock
+							(Manifest.Input'.of_manifest manifest_input)
+							lockfile_input
+					in
+					if melded = input then
+						true
+					else
+						QCheck.Test.fail_reportf
+							"Aimed for:@,%a@.@.But got:@,%a@."
+							Input.pp
+							input
+							Input.pp
+							melded
+				);
 		]
