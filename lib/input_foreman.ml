@@ -195,8 +195,6 @@ let cp_darcs_context ~env ~(name : Name.t) ~context =
 	in
 	Ok (Fmt.str "./%s/%s.txt" Working_directory.darcs_context_dir (Name.take name))
 
-exception Proc_error of string
-
 let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 	Logs.app (fun m -> m "Prefetching input %a … (this may take a while)" Name.pp name);
 	let open Input in
