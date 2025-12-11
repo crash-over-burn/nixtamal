@@ -186,20 +186,31 @@ module Git = struct
 			let* git = ll @@ kdl.@(node "git") in
 			let+ repository = Template.of_child ~name: "repository" git
 			and+ mirrors = Template.of_mirrors git
+			and+ reference = Reference.codec.of_kdl git.children
 			and+ submodules =
 				ll @@
-					match git.@(child "submodules" // arg 0 // bool_value) with
-					| Ok sms -> Ok sms
+					match git.@(child "submodules") with
+					| Ok sms ->
+						begin
+							match sms.@(arg 0 // bool_value) with
+							| Ok smb -> Ok smb
+							| Error (`Missing_index 0) -> Ok true
+							| Error err -> Error err
+						end
 					| Error (`Not_found ("submodules", _)) -> Ok false
 					| Error err -> Error err
 			and+ lfs =
 				ll @@
-					match git.@(child "lfs" // arg 0 // bool_value) with
-					| Ok sms -> Ok sms
+					match git.@(child "lfs") with
+					| Ok sms ->
+						begin
+							match sms.@(arg 0 // bool_value) with
+							| Ok smb -> Ok smb
+							| Error (`Missing_index 0) -> Ok true
+							| Error err -> Error err
+						end
 					| Error (`Not_found ("lfs", _)) -> Ok false
 					| Error err -> Error err
-			and+ reference =
-				Reference.codec.of_kdl git.children
 			in
 				{repository; mirrors; reference; submodules; lfs}
 		);
