@@ -8,6 +8,7 @@ module Manifest = Manifest
 module Input = Input
 module Input_foreman = Input_foreman
 module Working_directory = Working_directory
+module Util = Util
 
 type error = Error.error
 
