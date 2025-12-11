@@ -5,6 +5,7 @@
 module Error = Error
 module Name = Name
 module Manifest = Manifest
+module Lockfile = Lockfile
 module Input = Input
 module Input_foreman = Input_foreman
 module Working_directory = Working_directory
