@@ -20,7 +20,10 @@ module Uri = struct
 		let* host = string_size ~gen: a_to_z (int_bound 20) in
 		let* tld = string_size ~gen: a_to_z (int_bound 5) in
 		let* path_opt = option (string_size ~gen: a_to_z (int_bound 10)) in
-		let uri = Uri.of_string Fmt.(str "%s://%s.%s/%a" scheme host tld (option string) path_opt) in
+		let uri =
+			Uri.of_string @@
+				Fmt.str "%s://%s.%s/%s" scheme host tld (Option.value ~default: "" path_opt)
+		in
 		return uri
 end
 
