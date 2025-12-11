@@ -299,7 +299,7 @@ module Pijul = struct
 		)
 		|> Object.mem "rm" Util.URI.jsont ~enc: (fun i -> i.remote)
 		|> Object.mem "ms" (list Util.URI.jsont) ~enc: (fun i -> i.mirrors)
-		|> Object.mem "dt" (option string) ~enc: (fun i -> i.datetime)
+		|> Object.opt_mem "dt" string ~enc: (fun i -> i.datetime)
 		(* |> Object.mem "rf" Reference.jsont ~enc: (fun i -> i.reference) *)
 		|> Object.mem "ls" (option string) ~enc: (fun i -> i.latest_state)
 		|> Object.finish
