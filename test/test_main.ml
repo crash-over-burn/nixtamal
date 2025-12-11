@@ -3,8 +3,6 @@
 │ SPDX-License-Identifier: LGPL-2.1-or-later WITH OCaml-LGPL-linking-exception │
 └─────────────────────────────────────────────────────────────────────────────*)
 let () =
-	(*
-	let open Alcotest in
-	run "Nixtamal Suite" []
-	*)
-	()
+	Alcotest.run "Nixtamal" [
+		"Input", Test_input.suite;
+	]
