@@ -161,7 +161,8 @@ module Darcs = struct
 					| `Assumed (Some actx) -> encode_tag 0 string actx
 					| `Stated sctx -> encode_tag 1 string sctx
 					(* We can’t lock without a stable reference *)
-					| `Assumed None -> failwith "Missing assumed Darcs context";
+					| `Assumed None ->
+						Error.msgf Meta.none "Darcs context cannot be None when locking"
 				and dec = function
 					| [|tag; value|] ->
 						begin
