@@ -508,11 +508,89 @@ module Hash = struct
 	}
 end
 
+module Latest_cmd = struct
+	type t = Input.Latest.Cmd.t option
+	[@@deriving show, eq, qcheck]
+
+	let [@inline]to_manifest (latest : Input.Latest.t) : t =
+		latest.cmd
+
+	let [@inline]of_manifest (cmd : t) : Input.Latest.t =
+		Input.Latest.make ?cmd ()
+
+	let codec : t Util.KDL.codec = {
+		to_kdl = (function
+			| None -> []
+			| Some (exec, pipes) ->
+				let open Kdl in
+				let cmd_args ({prog; args}: Input.Latest.Cmd.cmd) =
+					List.map (Template.to_arg) (prog :: args)
+				in
+				let nodes =
+					List.map (fun pcmd -> node "|" ~args: (cmd_args pcmd) []) pipes
+				in
+				let nodes =
+					node "$" ~args: (cmd_args exec) [] :: nodes
+				in
+					[node "latest-cmd" nodes]
+		);
+		of_kdl = (fun kdl ->
+			let open Util.KDL.L in
+			let open Util.KDL.Valid in
+			let extract_cmd (node : Kdl.node) : Input.Latest.Cmd.cmd Util.KDL.Valid.t =
+				if List.is_empty node.props then
+					match Util.Non_empty_list.of_list node.args with
+					| Some (arg_prog, arg_args) ->
+						begin
+							match arg_prog.@(string_value), arg_args.@(each string_value) with
+							| Error _err, _ -> Error [`InvalidLatestCmd "Bad program specified for command"]
+							| _, Error _err -> Error [`InvalidLatestCmd "Bad arguments specified for command"]
+							| Ok prog, Ok args ->
+								Ok {
+									prog = Template.make prog;
+									args = List.map Template.make args;
+								}
+						end
+					| None -> Error [`InvalidLatestCmd "Empty command"]
+				else
+					Error [`InvalidLatestCmd "Props aren’t supported (yet?); you probably meant to add straight quotation marks (for example “\"--foo=bar\"”)."]
+			in
+			let rec extract_all_cmds acc = function
+				| [] -> acc
+				| cmd_list :: cmds_list ->
+					let acc' =
+						match acc, extract_cmd cmd_list with
+						| Error errs, Ok _ -> Error errs
+						| Ok _, Error errs -> Error errs
+						| Ok ok_acc, Ok cmd -> Ok (ok_acc @ [cmd])
+						| Error errs, Error errs' -> Error (errs @ errs')
+					in
+					extract_all_cmds acc' cmds_list
+			in
+			match ll @@ kdl.@(node "latest-cmd") with
+			| Error [`Not_found ("latest-cmd", _)] -> Ok None
+			| Error err -> Error err
+			| Ok latest_cmd ->
+				let+ exec : Input.Latest.Cmd.cmd =
+					let* exec' = ll @@ latest_cmd.@(child ~nth: 0 "$") in
+					extract_cmd exec'
+				and+ pipes : Input.Latest.Cmd.cmd list =
+					match ll @@ latest_cmd.@(child_many "|") with
+					| Ok ps -> extract_all_cmds (Ok []) ps
+					| Error [`Not_found ("|", _)] -> Ok []
+					| Error err -> Error err
+				in
+				let cmd : Input.Latest.Cmd.t = (exec, pipes) in
+				Some cmd
+		);
+	}
+end
+
 module Input' = struct
 	type t = {
 		name: Name.t;
 		kind: Kind.t;
-		latest_cmd: Input.Latest.Cmd.t option;
+		latest_cmd: Latest_cmd.t;
 		hash: Hash.t;
 		frozen: bool; [@default false]
 	}
@@ -521,7 +599,7 @@ module Input' = struct
 	let [@inline]to_manifest (input : Input.t) : t = {
 		name = input.name;
 		kind = Kind.to_manifest input.kind;
-		latest_cmd = input.latest.cmd;
+		latest_cmd = Latest_cmd.to_manifest input.latest;
 		hash = Hash.to_manifest input.hash;
 		frozen = input.frozen;
 	}
@@ -529,7 +607,7 @@ module Input' = struct
 	let [@inline]of_manifest (mnfst : t) : Input.t = {
 		name = mnfst.name;
 		kind = Kind.of_manifest mnfst.kind;
-		latest = Input.Latest.make ?cmd: mnfst.latest_cmd ();
+		latest = Latest_cmd.of_manifest mnfst.latest_cmd;
 		hash = Hash.of_manifest mnfst.hash;
 		frozen = mnfst.frozen;
 	}
@@ -544,20 +622,7 @@ module Input' = struct
 						[]
 			and kind = Kind.codec.to_kdl input.kind
 			and hash = Hash.codec.to_kdl input.hash
-			and latest_cmd =
-				match input.latest_cmd with
-				| None -> []
-				| Some (exec, pipes) ->
-					let cmd_args ({prog; args}: Input.Latest.Cmd.cmd) =
-						List.map (Template.to_arg) (prog :: args)
-					in
-					let nodes =
-						List.map (fun pcmd -> node "|" ~args: (cmd_args pcmd) []) pipes
-					in
-					let nodes =
-						node "$" ~args: (cmd_args exec) [] :: nodes
-					in
-						[node "latest-cmd" nodes]
+			and latest_cmd = Latest_cmd.codec.to_kdl input.latest_cmd
 			in
 			let nodes = kind @ hash @ latest_cmd in
 			node (Name.take input.name) ~props nodes
@@ -565,56 +630,11 @@ module Input' = struct
 		of_node = (fun input ->
 			let open Util.KDL.L in
 			let open Util.KDL.Valid in
-			let strip_quotes str =
-				let len = String.length str in
-				if len > 1 && str.[0] = '"' && str.[len - 1] = '"' then
-					String.sub str 1 (len - 2)
-				else
-					str
-			in
 			let+ name =
 				ll @@ input.@(node_name)
 				|> Result.map Name.make
-			and+ latest_cmd : Input.Latest.Cmd.t option =
-				let extract_cmds (node : Kdl.node) =
-					if List.is_empty node.props then
-						let string_cmd (_a, v) : Template.t =
-							Fmt.to_to_string Kdl.pp_value v
-							|> strip_quotes
-							|> Template.make
-						in
-						match List.map string_cmd node.args with
-						| [] -> Error [`InvalidLatestCmd "Empty command"]
-						| prog :: args -> Ok ({prog; args}: Input.Latest.Cmd.cmd)
-					else
-						Error [`InvalidLatestCmd "Props aren’t supported (yet?); you probably meant to add straight quotes (for example “\"--foo=bar\"”)."]
-				in
-				let rec extract_all_cmds acc = function
-					| [] -> acc
-					| cmd_list :: cmds_list ->
-						let acc' =
-							match acc, extract_cmds cmd_list with
-							| Error errs, Ok _ -> Error errs
-							| Ok _, Error errs -> Error errs
-							| Ok ok_acc, Ok cmd -> Ok (ok_acc @ [cmd])
-							| Error errs, Error errs' -> Error (errs @ errs')
-						in
-						extract_all_cmds acc' cmds_list
-				in
-				match input.@(child "latest-cmd") with
-				| Error _ ->
-					Ok None
-				| Ok lcmd_node ->
-					let+ exec =
-						let* exec' = ll @@ lcmd_node.@(child ~nth: 0 "$") in
-						extract_cmds exec'
-					and+ pipes =
-						match ll @@ lcmd_node.@(child_many "|") with
-						| Ok ps -> extract_all_cmds (Ok []) ps
-						| Error [`Not_found ("|", _)] -> Ok []
-						| Error err -> Error err
-					in
-					Some (exec, pipes)
+			and+ latest_cmd =
+				Latest_cmd.codec.of_kdl input.children
 			and+ hash =
 				match Hash.codec.of_kdl input.children with
 				| Ok h ->
