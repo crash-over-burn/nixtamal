@@ -20,17 +20,13 @@ end
 
 module Latest = struct
 	module Cmd = struct
-		type 'a non_empty_list =
-				('a * 'a list)
-		[@@deriving show, eq, qcheck]
-
 		type cmd = {
 			prog: Template.t;
 			args: Template.t list;
 		}
 		[@@deriving show, eq, make, qcheck]
 
-		type t = cmd non_empty_list
+		type t = cmd Util.Non_empty_list.t
 		[@@deriving show, eq, qcheck]
 
 		let (~$) x = (x, [])

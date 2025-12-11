@@ -194,3 +194,19 @@ module URI = struct
 		Jsont.string
 		|> Jsont.map ~kind: "URI" ~dec: Uri.of_string ~enc: Uri.to_string
 end
+
+module Non_empty_list = struct
+	type 'a t =
+			('a * 'a list)
+	[@@deriving show, eq, qcheck]
+
+	let to_list (x, xs) = x :: xs
+
+	let of_list = function
+		| [] -> None
+		| x :: xs -> Some (x, xs)
+
+	let map f (x, xs) = (f x, List.map f xs)
+	let fold_left f acc (x, xs) = List.fold_left f acc (x :: xs)
+	let fold_right f acc (x, xs) = List.fold_right f acc (x :: xs)
+end
