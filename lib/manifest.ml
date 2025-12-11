@@ -379,6 +379,63 @@ module Pijul = struct
 	}
 end
 
+module Kind = struct
+	type t = [
+		| `File of File.t
+		| `Archive of Archive.t
+		| `Git of Git.t
+		| `Darcs of Darcs.t
+		| `Pijul of Pijul.t
+	]
+	[@@deriving show, eq, qcheck]
+
+	let to_manifest : Input.Kind.t -> t = function
+		| `File f -> `File (File.to_manifest f)
+		| `Archive a -> `Archive (Archive.to_manifest a)
+		| `Git g -> `Git (Git.to_manifest g)
+		| `Darcs d -> `Darcs (Darcs.to_manifest d)
+		| `Pijul p -> `Pijul (Pijul.to_manifest p)
+
+	let of_manifest : t -> Input.Kind.t = function
+		| `File f -> `File (File.of_manifest f)
+		| `Archive a -> `Archive (Archive.of_manifest a)
+		| `Git g -> `Git (Git.of_manifest g)
+		| `Darcs d -> `Darcs (Darcs.of_manifest d)
+		| `Pijul p -> `Pijul (Pijul.of_manifest p)
+
+	let codec : t Util.KDL.codec = {
+		to_kdl = (function
+			| `File f -> File.codec.to_kdl f
+			| `Archive a -> Archive.codec.to_kdl a
+			| `Git g -> Git.codec.to_kdl g
+			| `Darcs d -> Darcs.codec.to_kdl d
+			| `Pijul p -> Pijul.codec.to_kdl p
+		);
+		of_kdl = (fun kdl ->
+			let kind_names = ["file"; "archive"; "git"; "darcs"; "pijul"] in
+			match File.codec.of_kdl kdl,
+			Archive.codec.of_kdl kdl,
+			Git.codec.of_kdl kdl,
+			Darcs.codec.of_kdl kdl,
+			Pijul.codec.of_kdl kdl with
+			| Ok file, Error _, Error _, Error _, Error _ ->
+				Ok (`File file)
+			| Error _, Ok archive, Error _, Error _, Error _ ->
+				Ok (`Archive archive)
+			| Error _, Error _, Ok git, Error _, Error _ ->
+				Ok (`Git git)
+			| Error _, Error _, Error _, Ok darcs, Error _ ->
+				Ok (`Darcs darcs)
+			| Error _, Error _, Error _, Error _, Ok pijul ->
+				Ok (`Pijul pijul)
+			| Error _, Error _, Error _, Error _, Error _ ->
+				Error [`OneRequired kind_names]
+			| _, _, _, _, _ ->
+				Error [`OnlyOneOf kind_names]
+		);
+	}
+end
+
 module Hash = struct
 	type t = {
 		algorithm: Input.Hash.algorithm; [@default Input.Hash.default_algorithm]
@@ -447,63 +504,6 @@ module Hash = struct
 					| Error err -> Error err
 			in
 			make ?algorithm ?expected ()
-		);
-	}
-end
-
-module Kind = struct
-	type t = [
-		| `File of File.t
-		| `Archive of Archive.t
-		| `Git of Git.t
-		| `Darcs of Darcs.t
-		| `Pijul of Pijul.t
-	]
-	[@@deriving show, eq, qcheck]
-
-	let to_manifest : Input.Kind.t -> t = function
-		| `File f -> `File (File.to_manifest f)
-		| `Archive a -> `Archive (Archive.to_manifest a)
-		| `Git g -> `Git (Git.to_manifest g)
-		| `Darcs d -> `Darcs (Darcs.to_manifest d)
-		| `Pijul p -> `Pijul (Pijul.to_manifest p)
-
-	let of_manifest : t -> Input.Kind.t = function
-		| `File f -> `File (File.of_manifest f)
-		| `Archive a -> `Archive (Archive.of_manifest a)
-		| `Git g -> `Git (Git.of_manifest g)
-		| `Darcs d -> `Darcs (Darcs.of_manifest d)
-		| `Pijul p -> `Pijul (Pijul.of_manifest p)
-
-	let codec : t Util.KDL.codec = {
-		to_kdl = (function
-			| `File f -> File.codec.to_kdl f
-			| `Archive a -> Archive.codec.to_kdl a
-			| `Git g -> Git.codec.to_kdl g
-			| `Darcs d -> Darcs.codec.to_kdl d
-			| `Pijul p -> Pijul.codec.to_kdl p
-		);
-		of_kdl = (fun kdl ->
-			let kind_names = ["file"; "archive"; "git"; "darcs"; "pijul"] in
-			match File.codec.of_kdl kdl,
-			Archive.codec.of_kdl kdl,
-			Git.codec.of_kdl kdl,
-			Darcs.codec.of_kdl kdl,
-			Pijul.codec.of_kdl kdl with
-			| Ok file, Error _, Error _, Error _, Error _ ->
-				Ok (`File file)
-			| Error _, Ok archive, Error _, Error _, Error _ ->
-				Ok (`Archive archive)
-			| Error _, Error _, Ok git, Error _, Error _ ->
-				Ok (`Git git)
-			| Error _, Error _, Error _, Ok darcs, Error _ ->
-				Ok (`Darcs darcs)
-			| Error _, Error _, Error _, Error _, Ok pijul ->
-				Ok (`Pijul pijul)
-			| Error _, Error _, Error _, Error _, Error _ ->
-				Error [`OneRequired kind_names]
-			| _, _, _, _, _ ->
-				Error [`OnlyOneOf kind_names]
 		);
 	}
 end
