@@ -5,7 +5,7 @@
 open Name
 
 type manifest_error = [
-	| `Parsing of Util.KDL.Valid.err list
+	| `Parsing of KDL.Valid.err list
 	| `Not_set_up
 	| `File_already_exists
 ]

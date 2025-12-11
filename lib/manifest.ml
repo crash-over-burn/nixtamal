@@ -17,16 +17,16 @@ module Template = struct
 	include Input.Template
 
 	let to_arg ?annot tpl =
-		Kdl.arg ?annot (`String (take tpl))
+		KDL.arg ?annot (`String (take tpl))
 
 	let of_child ~name kdl =
-		let open Util.KDL.L in
-		let open Util.KDL.Valid in
+		let open KDL.L in
+		let open KDL.Valid in
 		ll @@ Result.map make (kdl.@(child name // arg 0 // string_value))
 
 	let of_mirrors kdl =
-		let open Util.KDL.L in
-		let open Util.KDL.Valid in
+		let open KDL.L in
+		let open KDL.Valid in
 		ll @@
 			match kdl.@(child "mirrors" // args // each string_value) with
 			| Ok ms -> Ok (List.map make ms)
@@ -47,9 +47,9 @@ module File = struct
 	let [@inline]of_manifest ({url; mirrors}: t) : Input.File.t =
 		Input.File.make ~url ~mirrors ()
 
-	let codec : t Util.KDL.codec = {
+	let codec : t KDL.codec = {
 		to_kdl = (fun file ->
-			let open Kdl in
+			let open KDL in
 			let nodes =
 				if List.is_empty file.mirrors then
 						[]
@@ -62,8 +62,8 @@ module File = struct
 				[node "file" nodes]
 		);
 		of_kdl = (fun kdl ->
-			let open Util.KDL.L in
-			let open Util.KDL.Valid in
+			let open KDL.L in
+			let open KDL.Valid in
 			let* file = ll @@ kdl.@(node "file") in
 			let+ url = Template.of_child ~name: "url" file
 			and+ mirrors = Template.of_mirrors file
@@ -86,9 +86,9 @@ module Archive = struct
 	let [@inline]of_manifest ({url; mirrors}: t) : Input.Archive.t =
 		Input.Archive.make ~url ~mirrors ()
 
-	let codec : t Util.KDL.codec = {
+	let codec : t KDL.codec = {
 		to_kdl = (fun archive ->
-			let open Kdl in
+			let open KDL in
 			let url =
 				node "url" ~args: [Template.to_arg archive.url] [];
 			and nodes =
@@ -101,8 +101,8 @@ module Archive = struct
 				[node "archive" nodes]
 		);
 		of_kdl = (fun kdl ->
-			let open Util.KDL.L in
-			let open Util.KDL.Valid in
+			let open KDL.L in
+			let open KDL.Valid in
 			let* archive = ll @@ kdl.@(node "archive") in
 			let+ url = Template.of_child ~name: "url" archive
 			and+ mirrors = Template.of_mirrors archive
@@ -117,16 +117,16 @@ module Git = struct
 		type t = Input.Git.Reference.t
 		[@@deriving show, eq, qcheck]
 
-		let codec : t Util.KDL.codec = {
+		let codec : t KDL.codec = {
 			to_kdl = (fun ref ->
-				let open Kdl in
+				let open KDL in
 				match ref with
-				| `Branch b -> [Kdl.node "branch" ~args: [arg (`String b)] []]
-				| `Ref r -> [Kdl.node "ref" ~args: [arg (`String r)] []]
+				| `Branch b -> [KDL.node "branch" ~args: [arg (`String b)] []]
+				| `Ref r -> [KDL.node "ref" ~args: [arg (`String r)] []]
 			);
 			of_kdl = (fun kdl ->
-				let open Util.KDL.L in
-				let open Util.KDL.Valid in
+				let open KDL.L in
+				let open KDL.Valid in
 				let node_names = ["branch"; "ref"]
 				and branch = ll @@ kdl.@(node "branch" // arg 0 // string_value)
 				and ref = ll @@ kdl.@(node "ref" // arg 0 // string_value)
@@ -155,9 +155,9 @@ module Git = struct
 	let [@inline]of_manifest ({repository; mirrors; reference; submodules; lfs}: t) : Input.Git.t =
 		Input.Git.make ~repository ~mirrors ~reference ~submodules ~lfs ()
 
-	let codec : t Util.KDL.codec = {
+	let codec : t KDL.codec = {
 		to_kdl = (fun git ->
-			let open Kdl in
+			let open KDL in
 			let repository =
 				node "repository" ~args: [Template.to_arg git.repository] []
 			and nodes =
@@ -181,8 +181,8 @@ module Git = struct
 				[node "git" nodes]
 		);
 		of_kdl = (fun kdl ->
-			let open Util.KDL.L in
-			let open Util.KDL.Valid in
+			let open KDL.L in
+			let open KDL.Valid in
 			let* git = ll @@ kdl.@(node "git") in
 			let+ repository = Template.of_child ~name: "repository" git
 			and+ mirrors = Template.of_mirrors git
@@ -238,17 +238,17 @@ module Darcs = struct
 		]
 		[@@deriving show, eq, qcheck]
 
-		let codec : t Util.KDL.codec = {
+		let codec : t KDL.codec = {
 			to_kdl = (fun ref ->
-				let open Kdl in
+				let open KDL in
 				match ref with
-				| `Context (`Stated sc) -> [Kdl.node "context" ~args: [arg (`String sc)] []]
+				| `Context (`Stated sc) -> [KDL.node "context" ~args: [arg (`String sc)] []]
 				| `Context (`Assumed _) -> []
-				| `Tag t -> [Kdl.node "tag" ~args: [arg (`String t)] []]
+				| `Tag t -> [KDL.node "tag" ~args: [arg (`String t)] []]
 			);
 			of_kdl = (fun kdl ->
-				let open Util.KDL.L in
-				let open Util.KDL.Valid in
+				let open KDL.L in
+				let open KDL.Valid in
 				let node_names = ["tag"; "context"]
 				and context = ll @@ kdl.@(node "context" // arg 0 // string_value)
 				and tag = ll @@ kdl.@(node "tag" // arg 0 // string_value)
@@ -275,9 +275,9 @@ module Darcs = struct
 	let [@inline]of_manifest ({repository; mirrors; reference}: t) : Input.Darcs.t =
 		Input.Darcs.make ~repository ~mirrors ~reference ()
 
-	let codec : t Util.KDL.codec = {
+	let codec : t KDL.codec = {
 		to_kdl = (fun darcs ->
-			let open Kdl in
+			let open KDL in
 			let repository =
 				node "repository" ~args: [Template.to_arg darcs.repository] []
 			and nodes =
@@ -293,8 +293,8 @@ module Darcs = struct
 				[node "darcs" nodes]
 		);
 		of_kdl = (fun kdl ->
-			let open Util.KDL.L in
-			let open Util.KDL.Valid in
+			let open KDL.L in
+			let open KDL.Valid in
 			let* darcs = ll @@ kdl.@(node "darcs") in
 			let+ repository = Template.of_child ~name: "repository" darcs
 			and+ mirrors = Template.of_mirrors darcs
@@ -310,17 +310,17 @@ module Pijul = struct
 		type t = Input.Pijul.Reference.t
 		[@@deriving show, eq, qcheck]
 
-		let codec : t Util.KDL.codec = {
+		let codec : t KDL.codec = {
 			to_kdl = (fun ref ->
-				let open Kdl in
+				let open KDL in
 				match ref with
-				| `Channel c -> [Kdl.node "channel" ~args: [arg (`String c)] []]
-				| `State s -> [Kdl.node "state" ~args: [arg (`String s)] []]
-				| `Change c -> [Kdl.node "change" ~args: [arg (`String c)] []]
+				| `Channel c -> [KDL.node "channel" ~args: [arg (`String c)] []]
+				| `State s -> [KDL.node "state" ~args: [arg (`String s)] []]
+				| `Change c -> [KDL.node "change" ~args: [arg (`String c)] []]
 			);
 			of_kdl = (fun kdl ->
-				let open Util.KDL.L in
-				let open Util.KDL.Valid in
+				let open KDL.L in
+				let open KDL.Valid in
 				let node_names = ["channel"; "state"; "change"]
 				and channel = ll @@ kdl.@(node "channel" // arg 0 // string_value)
 				and state = ll @@ kdl.@(node "state" // arg 0 // string_value)
@@ -349,9 +349,9 @@ module Pijul = struct
 	let [@inline]of_manifest ({remote; mirrors; reference}: t) : Input.Pijul.t =
 		Input.Pijul.make ~remote ~mirrors ~reference ()
 
-	let codec : t Util.KDL.codec = {
+	let codec : t KDL.codec = {
 		to_kdl = (fun pijul ->
-			let open Kdl in
+			let open KDL in
 			let remote =
 				node "remote" ~args: [Template.to_arg pijul.remote] []
 			and nodes =
@@ -367,8 +367,8 @@ module Pijul = struct
 				[node "pijul" nodes]
 		);
 		of_kdl = (fun kdl ->
-			let open Util.KDL.L in
-			let open Util.KDL.Valid in
+			let open KDL.L in
+			let open KDL.Valid in
 			let* pijul = ll @@ kdl.@(node "pijul") in
 			let+ remote = Template.of_child ~name: "remote" pijul
 			and+ mirrors = Template.of_mirrors pijul
@@ -403,7 +403,7 @@ module Kind = struct
 		| `Darcs d -> `Darcs (Darcs.of_manifest d)
 		| `Pijul p -> `Pijul (Pijul.of_manifest p)
 
-	let codec : t Util.KDL.codec = {
+	let codec : t KDL.codec = {
 		to_kdl = (function
 			| `File f -> File.codec.to_kdl f
 			| `Archive a -> Archive.codec.to_kdl a
@@ -449,9 +449,9 @@ module Hash = struct
 	let [@inline]of_manifest ({algorithm; expected}: t) : Input.Hash.t =
 		Input.Hash.make ~algorithm ?expected ()
 
-	let codec : t Util.KDL.codec = {
+	let codec : t KDL.codec = {
 		to_kdl = (fun hash ->
-			let open Kdl in
+			let open KDL in
 			let props =
 				match hash.expected with
 				| None -> []
@@ -465,8 +465,8 @@ module Hash = struct
 				[node "hash" ~props []]
 		);
 		of_kdl = (fun kdl ->
-			let open Util.KDL.L in
-			let open Util.KDL.Valid in
+			let open KDL.L in
+			let open KDL.Valid in
 			let* hash = ll @@ kdl.@(node "hash") in
 			let+ algorithm : Input.Hash.algorithm option =
 				match hash.@(prop "algorithm") with
@@ -518,11 +518,11 @@ module Latest_cmd = struct
 	let [@inline]of_manifest (cmd : t) : Input.Latest.t =
 		Input.Latest.make ?cmd ()
 
-	let codec : t Util.KDL.codec = {
+	let codec : t KDL.codec = {
 		to_kdl = (function
 			| None -> []
 			| Some (exec, pipes) ->
-				let open Kdl in
+				let open KDL in
 				let cmd_args ({prog; args}: Input.Latest.Cmd.cmd) =
 					List.map (Template.to_arg) (prog :: args)
 				in
@@ -535,9 +535,9 @@ module Latest_cmd = struct
 					[node "latest-cmd" nodes]
 		);
 		of_kdl = (fun kdl ->
-			let open Util.KDL.L in
-			let open Util.KDL.Valid in
-			let extract_cmd (node : Kdl.node) : Input.Latest.Cmd.cmd Util.KDL.Valid.t =
+			let open KDL.L in
+			let open KDL.Valid in
+			let extract_cmd (node : KDL.node) : Input.Latest.Cmd.cmd KDL.Valid.t =
 				if List.is_empty node.props then
 					match Util.Non_empty_list.of_list node.args with
 					| Some (arg_prog, arg_args) ->
@@ -612,9 +612,9 @@ module Input' = struct
 		frozen = mnfst.frozen;
 	}
 
-	let codec : t Util.KDL.node_codec = {
+	let codec : t KDL.node_codec = {
 		to_node = (fun input ->
-			let open Kdl in
+			let open KDL in
 			let props =
 				if input.frozen then
 						[("frozen", arg (`Bool true))]
@@ -628,8 +628,8 @@ module Input' = struct
 			node (Name.take input.name) ~props nodes
 		);
 		of_node = (fun input ->
-			let open Util.KDL.L in
-			let open Util.KDL.Valid in
+			let open KDL.L in
+			let open KDL.Valid in
 			let+ name =
 				ll @@ input.@(node_name)
 				|> Result.map Name.make
@@ -663,9 +663,9 @@ type t = {
 }
 [@@deriving show, eq, make, qcheck]
 
-let document_to_t (doc : Kdl.t) : t Util.KDL.Valid.t =
-	let open Util.KDL.L in
-	let open Util.KDL.Valid in
+let document_to_t (doc : KDL.t) : t KDL.Valid.t =
+	let open KDL.L in
+	let open KDL.Valid in
 	let* manifest_default_hash_algorithm : Input.Hash.algorithm option =
 		match ll @@ doc.@(node "default_hash_algorithm" // arg 0 // string_value) with
 		| Ok dha ->
@@ -686,7 +686,7 @@ let document_to_t (doc : Kdl.t) : t Util.KDL.Valid.t =
 		(* TODO: a lens would mean this could use `each` *)
 		let rec get_inputs acc = function
 			| [] -> acc
-			| (input : Kdl.node) :: inputs_tail ->
+			| (input : KDL.node) :: inputs_tail ->
 				let acc' =
 					match acc, Input'.codec.of_node input with
 					| Error errs, Ok _ -> Error errs
@@ -702,7 +702,7 @@ let document_to_t (doc : Kdl.t) : t Util.KDL.Valid.t =
 	in
 	make ~version ~inputs ()
 
-let manifest : Kdl.t option ref = ref None
+let manifest : KDL.t option ref = ref None
 
 let exists () : bool =
 	let working_dir = Working_directory.get () in
@@ -716,14 +716,14 @@ let read () =
 	Logs.info (fun m -> m "Reading manifest @@ %a …" Eio.Path.pp filepath);
 	let* kdl =
 		Eio.Path.with_open_in filepath @@ fun flow ->
-		Util.KDL.of_flow flow
+		KDL.of_flow flow
 	in
 	let () = manifest := Some kdl in
 	Ok kdl
 
 let make ?(version = "0.1.0") () =
 	Logs.app (fun m -> m "Making manifest file @@ version:%s" version);
-	let open Kdl in
+	let open KDL in
 	let doc = [
 		node "version" ~args: [arg (`String version)] [];
 		node "inputs" (
@@ -734,7 +734,7 @@ let make ?(version = "0.1.0") () =
 		);
 	]
 	in
-	Logs.debug (fun m -> m "New KDL doc:@;%a@." Kdl.pp doc);
+	Logs.debug (fun m -> m "New KDL doc:@;%a@." KDL.pp doc);
 	manifest := Some doc
 
 let write () : (unit, error) result =
@@ -756,7 +756,7 @@ let write () : (unit, error) result =
 		]
 		in
 		Eio.Flow.write flow banner;
-		Util.KDL.to_flow flow mnfst;
+		KDL.to_flow flow mnfst;
 		Eio.Flow.write flow ([Cstruct.of_string "\n"])
 	in
 	Logs.app (fun m -> m "Manifest written.");

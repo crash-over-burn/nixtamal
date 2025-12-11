@@ -9,7 +9,7 @@ module Lockfile = Lockfile
 module Input = Input
 module Input_foreman = Input_foreman
 module Working_directory = Working_directory
-module Util = Util
+module KDL = KDL
 
 type error = Error.error
 
@@ -45,11 +45,11 @@ let read_manifest_and_lockfile () : (Name.Name.t list, error) result =
 	let* manifest =
 		Error.tag_manifest @@ begin
 			match Manifest.read () with
-			| Ok(kdl : Kdl.t) ->
+			| Ok(kdl : KDL.t) ->
 				Manifest.document_to_t kdl
 				|> Result.map_error (fun err -> `Parsing err)
-			| Error(e : Kdl.error) ->
-				let v_errs : Util.KDL.Valid.err list = [`ParseError e] in
+			| Error(e : KDL.error) ->
+				let v_errs : KDL.Valid.err list = [`ParseError e] in
 				Error (`Parsing v_errs)
 		end
 	in

@@ -7,7 +7,7 @@ open Nixtamal
 
 let suite =
 	[test_case "Manifest latest-cmd to KDL" `Quick (fun () ->
-		let kdl = testable Kdl.pp Kdl.equal in
+		let kdl = testable KDL.pp KDL.equal in
 		let open Nixtamal.Input.Latest.Cmd in
 		let t = Input.Template.make in
 		let in_kdl =
@@ -23,7 +23,7 @@ let suite =
 					| head -n1
 				}
 			|}
-			|> Kdl.of_string
+			|> KDL.of_string
 			|> Result.get_ok
 		in
 		check kdl "KDL latest-cmd with pipe" out_kdl in_kdl
@@ -40,12 +40,12 @@ let suite =
 						| head -n1
 					}
 				|}
-				|> Kdl.of_string
+				|> KDL.of_string
 				|> Result.get_ok
 			in
 			match Manifest.Latest_cmd.codec.of_kdl kdl with
 			| Ok lc -> lc
-			| Error err -> failwith Fmt.(str "%a from %a" (list ~sep: semi Util.KDL.Valid.pp_err) err Kdl.pp kdl)
+			| Error err -> failwith Fmt.(str "%a from %a" (list ~sep: semi KDL.Valid.pp_err) err KDL.pp kdl)
 		in
 		let out_latest_cmd =
 			~${prog = t "curl"; args = [t "https://toast.al"]}
@@ -55,7 +55,7 @@ let suite =
 		check latest_cmd "latest-cmd with pipe from KDL" out_latest_cmd in_latest_cmd
 	);
 	test_case "Manifest frozen Pijul to KDL" `Quick (fun () ->
-		let kdl = testable Kdl.pp Kdl.equal in
+		let kdl = testable KDL.pp KDL.equal in
 		let t = Input.Template.make in
 		let in_kdl =
 			let name = Name.Name.make "pijul"
@@ -74,15 +74,15 @@ let suite =
 					}
 				}
 			|}
-			|> Kdl.of_string
+			|> KDL.of_string
 			|> Result.get_ok
 		in
 		check kdl "KDL frozen Pijul" out_kdl [in_kdl]
 	);
 	test_case "Manifest frozen Pijul of KDL" `Quick (fun () ->
 		let input = testable Manifest.Input'.pp Manifest.Input'.equal in
-		let open Util.KDL.L in
-		let open Util.KDL.Valid in
+		let open KDL.L in
+		let open KDL.Valid in
 		let t = Input.Template.make in
 		let in_input =
 			let kdl =
@@ -94,13 +94,13 @@ let suite =
 						}
 					}
 				|}
-				|> Kdl.of_string
+				|> KDL.of_string
 				|> Result.get_ok
 			in
 			let node = ll @@ kdl.@(node "pijul" ~nth: 0) in
 			match Result.bind node Manifest.Input'.codec.of_node with
 			| Ok lc -> lc
-			| Error err -> failwith Fmt.(str "%a from %a" (list ~sep: semi Util.KDL.Valid.pp_err) err Kdl.pp kdl)
+			| Error err -> failwith Fmt.(str "%a from %a" (list ~sep: semi KDL.Valid.pp_err) err KDL.pp kdl)
 		in
 		let out_input =
 			let name = Name.Name.make "pijul"
@@ -151,7 +151,7 @@ let suite =
 							Manifest.Input'.pp
 							input'
 					| Error err ->
-						QCheck.Test.fail_reportf "%a" Fmt.(list ~sep: semi Util.KDL.Valid.pp_err) err;
+						QCheck.Test.fail_reportf "%a" Fmt.(list ~sep: semi KDL.Valid.pp_err) err;
 				);
 			QCheck.Test.make
 				~name: "Input sameshape"
