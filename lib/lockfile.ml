@@ -10,27 +10,10 @@ let filename = "lock.json"
 
 let encode_tag = Util.Jsont.encode_tag
 
-module Uri = struct
-	include Uri
-	(* good enough for this *)
-	let gen =
-		let open QCheck.Gen in
-		let a_to_z = (char_range 'a' 'z') in
-		let* scheme = QCheck.Gen.oneofl ["http"; "https"; "ftp"; "sftp"] in
-		let* host = string_size ~gen: a_to_z (int_bound 20) in
-		let* tld = string_size ~gen: a_to_z (int_bound 5) in
-		let* path_opt = option (string_size ~gen: a_to_z (int_bound 10)) in
-		let uri =
-			Uri.of_string @@
-				Fmt.str "%s://%s.%s/%s" scheme host tld (Option.value ~default: "" path_opt)
-		in
-		return uri
-end
-
 module File = struct
 	type t = {
-		url: Uri.t;
-		mirrors: Uri.t list;
+		url: URI.t;
+		mirrors: URI.t list;
 	}
 	[@@deriving show, eq, qcheck]
 
@@ -39,7 +22,7 @@ module File = struct
 			({url; mirrors; _}: Input.File.t)
 			: t
 		=
-		let to_uri = Fun.compose Uri.of_string (Input.Template.fill ~models) in
+		let to_uri = Fun.compose URI.of_string (Input.Template.fill ~models) in
 		{
 			url = to_uri url;
 			mirrors = List.map to_uri mirrors;
@@ -50,20 +33,20 @@ module File = struct
 		Object.map
 			~kind: "File_lock"
 			(fun url mirrors -> {url; mirrors})
-		|> Object.mem "ur" Util.URI.jsont ~enc: (fun i -> i.url)
-		|> Object.mem "ms" (list Util.URI.jsont) ~enc: (fun i -> i.mirrors)
+		|> Object.mem "ur" URI.jsont ~enc: (fun i -> i.url)
+		|> Object.mem "ms" (list URI.jsont) ~enc: (fun i -> i.mirrors)
 		|> Object.finish
 end
 
 module Archive = struct
 	type t = {
-		url: Uri.t;
-		mirrors: Uri.t list;
+		url: URI.t;
+		mirrors: URI.t list;
 	}
 	[@@deriving show, eq, qcheck]
 
 	let [@inline]to_lock ~(models : Input.jg_models2) ({url; mirrors; _}: Input.Archive.t) : t =
-		let to_uri = Fun.compose Uri.of_string (Input.Template.fill ~models) in
+		let to_uri = Fun.compose URI.of_string (Input.Template.fill ~models) in
 		{
 			url = to_uri url;
 			mirrors = List.map to_uri mirrors;
@@ -74,8 +57,8 @@ module Archive = struct
 		Object.map
 			~kind: "Archive_lock"
 			(fun url mirrors -> {url; mirrors})
-		|> Object.mem "ur" Util.URI.jsont ~enc: (fun i -> i.url)
-		|> Object.mem "ms" (list Util.URI.jsont) ~enc: (fun i -> i.mirrors)
+		|> Object.mem "ur" URI.jsont ~enc: (fun i -> i.url)
+		|> Object.mem "ms" (list URI.jsont) ~enc: (fun i -> i.mirrors)
 		|> Object.finish
 end
 
@@ -109,8 +92,8 @@ module Git = struct
 	*)
 
 	type t = {
-		repository: Uri.t;
-		mirrors: Uri.t list;
+		repository: URI.t;
+		mirrors: URI.t list;
 		(*reference: Reference.t;*)
 		datetime: string option;
 		submodules: bool;
@@ -124,7 +107,7 @@ module Git = struct
 			({repository; mirrors; (*reference;*) datetime; submodules; lfs; latest_revision; _}: Input.Git.t)
 			: t
 		=
-		let to_uri = Fun.compose Uri.of_string (Input.Template.fill ~models) in
+		let to_uri = Fun.compose URI.of_string (Input.Template.fill ~models) in
 		{
 			repository = to_uri repository;
 			mirrors = List.map to_uri mirrors;
@@ -142,8 +125,8 @@ module Git = struct
 			(fun repository mirrors (*reference*) datetime submodules lfs latest_revision ->
 				{repository; mirrors; (*reference;*) datetime; submodules; lfs; latest_revision}
 			)
-		|> Object.mem "rp" Util.URI.jsont ~enc: (fun i -> i.repository)
-		|> Object.mem "ms" (list Util.URI.jsont) ~enc: (fun i -> i.mirrors)
+		|> Object.mem "rp" URI.jsont ~enc: (fun i -> i.repository)
+		|> Object.mem "ms" (list URI.jsont) ~enc: (fun i -> i.mirrors)
 		(*|> Object.mem "rf" Reference.jsont ~enc: (fun i -> i.reference)*)
 		|> Object.opt_mem "dt" string ~enc: (fun i -> i.datetime)
 		|> Object.mem "sm" bool ~enc: (fun i -> i.submodules)
@@ -203,8 +186,8 @@ module Darcs = struct
 	end
 
 	type t = {
-		repository: Uri.t;
-		mirrors: Uri.t list;
+		repository: URI.t;
+		mirrors: URI.t list;
 		datetime: string option;
 		(* Darcs isn’t like the other girls; we don’t have a simple stable reference point.
 		   Either the tag or context can be used. *)
@@ -218,7 +201,7 @@ module Darcs = struct
 			({repository; mirrors; datetime; reference; latest_weak_hash; _}: Input.Darcs.t)
 			: t
 		=
-		let to_uri = Fun.compose Uri.of_string (Input.Template.fill ~models) in
+		let to_uri = Fun.compose URI.of_string (Input.Template.fill ~models) in
 		{
 			repository = to_uri repository;
 			mirrors = List.map to_uri mirrors;
@@ -234,8 +217,8 @@ module Darcs = struct
 			(fun repository mirrors datetime reference latest_weak_hash ->
 				{repository; mirrors; datetime; reference; latest_weak_hash}
 			)
-		|> Object.mem "rp" Util.URI.jsont ~enc: (fun i -> i.repository)
-		|> Object.mem "ms" (list Util.URI.jsont) ~enc: (fun i -> i.mirrors)
+		|> Object.mem "rp" URI.jsont ~enc: (fun i -> i.repository)
+		|> Object.mem "ms" (list URI.jsont) ~enc: (fun i -> i.mirrors)
 		|> Object.opt_mem "dt" string ~enc: (fun i -> i.datetime)
 		|> Object.mem "rf" Reference.jsont ~enc: (fun i -> i.reference)
 		|> Object.opt_mem "lw" string ~enc: (fun i -> i.latest_weak_hash)
@@ -274,8 +257,8 @@ module Pijul = struct
 	*)
 
 	type t = {
-		remote: Uri.t;
-		mirrors: Uri.t list;
+		remote: URI.t;
+		mirrors: URI.t list;
 		datetime: string option;
 		(*reference: Reference.t;*)
 		latest_state: string option;
@@ -287,7 +270,7 @@ module Pijul = struct
 			({remote; mirrors; datetime; latest_state; _}: Input.Pijul.t)
 			: t
 		=
-		let to_uri = Fun.compose Uri.of_string (Input.Template.fill ~models) in
+		let to_uri = Fun.compose URI.of_string (Input.Template.fill ~models) in
 		{
 			remote = to_uri remote;
 			mirrors = List.map to_uri mirrors;
@@ -300,8 +283,8 @@ module Pijul = struct
 		Object.map ~kind: "Pijul_lock" (fun remote mirrors datetime (*reference*) latest_state ->
 			{remote; mirrors; datetime; (*reference;*) latest_state}
 		)
-		|> Object.mem "rm" Util.URI.jsont ~enc: (fun i -> i.remote)
-		|> Object.mem "ms" (list Util.URI.jsont) ~enc: (fun i -> i.mirrors)
+		|> Object.mem "rm" URI.jsont ~enc: (fun i -> i.remote)
+		|> Object.mem "ms" (list URI.jsont) ~enc: (fun i -> i.mirrors)
 		|> Object.opt_mem "dt" string ~enc: (fun i -> i.datetime)
 		(* |> Object.mem "rf" Reference.jsont ~enc: (fun i -> i.reference) *)
 		|> Object.mem "ls" (option string) ~enc: (fun i -> i.latest_state)

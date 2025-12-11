@@ -189,12 +189,6 @@ module These = struct
 		these f g (fun a b -> h (f a) (g b))
 end
 
-module URI = struct
-	let jsont : Uri.t Jsont.t =
-		Jsont.string
-		|> Jsont.map ~kind: "URI" ~dec: Uri.of_string ~enc: Uri.to_string
-end
-
 module Non_empty_list = struct
 	type 'a t =
 			('a * 'a list)
