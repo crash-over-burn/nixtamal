@@ -205,13 +205,24 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		let unix_env = Unix.environment () in
 		Array.append unix_env [|"NIX_HASH_ALGO=" ^ hash_algo_type_val|]
 	in
-	let stdout_buf = Buffer.create 1024
-	and stderr_buf = Buffer.create 1024
+	let run_and_gather ?(buffer_size = 1024) method' cmd =
+		let stdout_buf = Buffer.create buffer_size
+		and stderr_buf = Buffer.create buffer_size
+		in
+		let stdout_sink = Eio.Flow.buffer_sink stdout_buf
+		and stderr_sink = Eio.Flow.buffer_sink stderr_buf
+		in
+		let* () =
+			try
+				Eio.Process.run proc_mgr ~env: proc_env ~stdout: stdout_sink ~stderr: stderr_sink cmd;
+				Ok ()
+			with
+				| exn ->
+					Error (`RunException (method', exn, String.trim (Buffer.contents stdout_buf)))
+		in
+		Ok (String.trim (Buffer.contents stdout_buf))
 	in
-	let stdout_sink = Eio.Flow.buffer_sink stdout_buf
-	and stderr_sink = Eio.Flow.buffer_sink stderr_buf
-	and models = Input.jg_models2 input
-	in
+	let models = Input.jg_models2 input in
 	let prefetch_file (f : File.t) : (Input.t, Error.prefetch_error) result =
 		let method' = `URL
 		and url = Uri.of_string (Input.Template.fill f.url ~models)
@@ -224,32 +235,22 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		]
 		in
 		Logs.debug (fun m -> m "Running file cmd: %a" (Fmt.list ~sep: Fmt.sp Fmt.string) cmd);
-		try
-			let () =
-				Eio.Process.run
-					proc_mgr
-					~env: proc_env
-					~stdout: stdout_sink
-					~stderr: stderr_sink
-					cmd
-			in
-			let stderr_str = String.trim @@ Buffer.contents stderr_buf in
-			(* Fkin’ A… why use stderr for *not* errors, Nix‽ *)
-			if stderr_str <> "" && not (String.starts_with ~prefix: "path is" stderr_str) then
-				Error (`Stderr (method', stderr_str))
-			else
-				let stdin_str = String.trim @@ Buffer.contents stdout_buf in
-				Logs.debug (fun m -> m "Command output: %s" stdin_str);
+		match run_and_gather method' cmd with
+		| Ok "" ->
+			Error (`Empty_output method')
+		| Ok stdout ->
+			begin
+				Logs.debug (fun m -> m "Command output: %s" stdout);
 				let last_nonempty_line =
-					String.split_on_char '\n' stdin_str
+					String.split_on_char '\n' stdout
 					|> List.rev
 					|> List.find_opt (fun line -> line <> "")
 				in
 				match last_nonempty_line with
 				| None -> Error (`Empty_output method')
 				| value -> Ok {input with hash = {input.hash with value}}
-		with
-			| exn -> Error (`Exception (method', Printexc.to_string exn))
+			end
+		| Error err -> Error err
 
 	and prefetch_archive (a : Archive.t) : (Input.t, Error.prefetch_error) result =
 		let method' = `URL
@@ -264,32 +265,22 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		]
 		in
 		Logs.debug (fun m -> m "Running archive cmd: %a" (Fmt.list ~sep: Fmt.sp Fmt.string) cmd);
-		try
-			let () =
-				Eio.Process.run
-					proc_mgr
-					~env: proc_env
-					~stdout: stdout_sink
-					~stderr: stderr_sink
-					cmd
-			in
-			let stderr_str = String.trim @@ Buffer.contents stderr_buf in
-			(* Fkin’ A… why use stderr for *not* errors, Nix‽ *)
-			if stderr_str <> "" && not (String.starts_with ~prefix: "path is" stderr_str) then
-				Error (`Stderr (method', stderr_str))
-			else
-				let stdin_str = String.trim @@ Buffer.contents stdout_buf in
-				Logs.debug (fun m -> m "Command output: %s" stdin_str);
+		match run_and_gather method' cmd with
+		| Ok "" ->
+			Error (`Empty_output method')
+		| Ok stdout ->
+			begin
+				Logs.debug (fun m -> m "Command output: %s" stdout);
 				let last_nonempty_line =
-					String.split_on_char '\n' stdin_str
+					String.split_on_char '\n' stdout
 					|> List.rev
 					|> List.find_opt (fun line -> line <> "")
 				in
 				match last_nonempty_line with
 				| None -> Error (`Empty_output method')
 				| value -> Ok {input with hash = {input.hash with value}}
-		with
-			| exn -> Error (`Exception (method', Printexc.to_string exn))
+			end
+		| Error err -> Error err
 
 	and prefetch_git (g : Git.t) : (Input.t, Error.prefetch_error) result =
 		let method' = `Git
@@ -303,7 +294,6 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 			Uri.to_string repository;
 		]
 		in
-		Logs.debug (fun m -> m "Running Git cmd: %a" (Fmt.list ~sep: Fmt.sp Fmt.string) cmd);
 		let cmd =
 			List.concat [
 				cmd;
@@ -316,27 +306,16 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 				if g.lfs then ["--fetch-lfs"] else [];
 			];
 		in
-		try
-			let () =
-				Eio.Process.run
-					proc_mgr
-					~env: proc_env
-					~stdout: stdout_sink
-					~stderr: stderr_sink
-					cmd
-			in
-			let stderr_str = String.trim @@ Buffer.contents stderr_buf in
-			if stderr_str <> "" then
-				Error (`Stderr (method', stderr_str))
-			else
-				let stdin_str = Buffer.contents stdout_buf in
-				Logs.debug (fun m -> m "Command output: %s" stdin_str);
+		Logs.debug (fun m -> m "Running Git cmd: %a" (Fmt.list ~sep: Fmt.sp Fmt.string) cmd);
+		match run_and_gather method' cmd with
+		| Ok "" ->
+			Error (`Empty_output method')
+		| Ok stdout ->
+			begin
+				Logs.debug (fun m -> m "Command output: %s" stdout);
 				let* data =
-					if stdin_str = "" then
-						Error (`Empty_output method')
-					else
-						Jsont_bytesrw.decode_string Prefetch.Git.jsont stdin_str
-						|> Result.map_error (fun err -> `JSON_parsing (method', err))
+					Jsont_bytesrw.decode_string Prefetch.Git.jsont stdout
+					|> Result.map_error (fun err -> `JSON_parsing (method', err))
 				in
 				Ok {input with
 					kind =
@@ -349,8 +328,8 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 						value = Some data.hash.value;
 					};
 				}
-		with
-			| exn -> Error (`Exception (method', Printexc.to_string exn))
+			end
+		| Error err -> Error err
 
 	and prefetch_darcs (d : Darcs.t) : (Input.t, Error.prefetch_error) result =
 		let method' = `Darcs
@@ -366,27 +345,15 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		in
 		let cmd = cmd @ [repository] in
 		Logs.debug (fun m -> m "Running Darcs cmd: %a" (Fmt.list ~sep: Fmt.sp Fmt.string) cmd);
-		try
-			let () =
-				Eio.Process.run
-					proc_mgr
-					~env: proc_env
-					~stdout: stdout_sink
-					~stderr: stderr_sink
-					cmd
-			in
-			let stderr_str = String.trim @@ Buffer.contents stderr_buf in
-			if stderr_str <> "" then
-				Error (`Stderr (method', stderr_str))
-			else
-				let stdin_str = Buffer.contents stdout_buf in
-				Logs.debug (fun m -> m "Command output: %s" stdin_str);
+		match run_and_gather method' cmd with
+		| Ok "" ->
+			Error (`Empty_output method')
+		| Ok stdout ->
+			begin
+				Logs.debug (fun m -> m "Command output: %s" stdout);
 				let* data =
-					if stdin_str = "" then
-						Error (`Empty_output method')
-					else
-						Jsont_bytesrw.decode_string Prefetch.Darcs.jsont stdin_str
-						|> Result.map_error (fun err -> `JSON_parsing (method', err))
+					Jsont_bytesrw.decode_string Prefetch.Darcs.jsont stdout
+					|> Result.map_error (fun err -> `JSON_parsing (method', err))
 				in
 				let* reference =
 					match d.reference with
@@ -412,8 +379,8 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 						value = Some data.hash.value;
 					};
 				}
-		with
-			| exn -> Error (`Exception (method', Printexc.to_string exn))
+			end
+		| Error err -> Error err
 
 	and prefetch_pijul (p : Pijul.t) : (Input.t, Error.prefetch_error) result =
 		let method' = `Pijul
@@ -431,27 +398,15 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 				| `State s -> ["--state"; s]
 		in
 		Logs.debug (fun m -> m "Running Pijul cmd: %a" (Fmt.list ~sep: Fmt.sp Fmt.string) cmd);
-		try
-			let () =
-				Eio.Process.run
-					proc_mgr
-					~env: proc_env
-					~stdout: stdout_sink
-					~stderr: stderr_sink
-					cmd
-			in
-			let stderr_str = String.trim @@ Buffer.contents stderr_buf in
-			if stderr_str <> "" then
-				Error (`Stderr (method', stderr_str))
-			else
-				let stdin_str = Buffer.contents stdout_buf in
-				Logs.debug (fun m -> m "Command output: %s" stdin_str);
+		match run_and_gather method' cmd with
+		| Ok "" ->
+			Error (`Empty_output method')
+		| Ok stdout ->
+			begin
+				Logs.debug (fun m -> m "Command output: %s" stdout);
 				let* data =
-					if stdin_str = "" then
-						Error (`Empty_output method')
-					else
-						Jsont_bytesrw.decode_string Prefetch.Pijul.jsont stdin_str
-						|> Result.map_error (fun err -> `JSON_parsing (method', err))
+					Jsont_bytesrw.decode_string Prefetch.Pijul.jsont stdout
+					|> Result.map_error (fun err -> `JSON_parsing (method', err))
 				in
 				Ok {input with
 					kind =
@@ -464,8 +419,8 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 						value = Some data.hash.value;
 					};
 				}
-		with
-			| exn -> Error (`Exception (method', Printexc.to_string exn))
+			end
+		| Error err -> Error err
 	in
 	let* new_input : Input.t =
 		Result.map_error (fun err -> `Prefetch (input.name, err)) @@ begin

@@ -4,6 +4,9 @@
 └─────────────────────────────────────────────────────────────────────────────*)
 open Name
 
+let pp_exn ppf exn =
+	Fmt.pf ppf "%s" (Printexc.to_string exn)
+
 type manifest_error = [
 	| `Parsing of KDL.Valid.err list
 	| `Not_set_up
@@ -27,10 +30,9 @@ type prefetch_method = [
 
 type prefetch_error = [
 	| `Empty_output of prefetch_method
-	| `Stderr of prefetch_method * string
 	| `JSON_parsing of prefetch_method * string
 	| `Darcs_context of string
-	| `Exception of prefetch_method * string
+	| `RunException of prefetch_method * exn * string
 ]
 [@@deriving show]
 
