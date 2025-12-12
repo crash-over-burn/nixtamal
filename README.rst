@@ -16,7 +16,7 @@ Fulfilling input pinning for Nix (& hopefully more)
 .. role:: t
 
 Pronunciation
-	/ˈnɪʃˌtəmˌal/ *or* /ˈnɪksˌtəˌmal/
+	/nɪʃ.təˈmal/ *or* /ˈnɪkstəˌmɑːl/
 Maker
 	toastal
 Put out
