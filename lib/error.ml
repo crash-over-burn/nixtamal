@@ -42,8 +42,7 @@ type input_foreman_error = [
 	| `Could_not_get of Name.t
 	| `Could_not_set of Name.t
 	| `Latest_cmd_empty of Name.t
-	| `Latest_cmd_fail of Name.t * string
-	| `Latest_cmd_stderr of Name.t * string
+	| `Latest_cmd_fail of Name.t * exn * string
 	| `Prefetch of Name.t * prefetch_error
 	| `Pool_exception of string
 	(* FIXME: string list *)

@@ -440,8 +440,8 @@ let run_pipeline ~sw ~proc_mgr ~(models : Input.jg_models2) cmds =
 	let rec build_pipeline ?stdin = function
 		| {prog; args}, [] ->
 			begin
-				let stdout_buf = Buffer.create 512
-				and stderr_buf = Buffer.create 512
+				let stdout_buf = Buffer.create 1024
+				and stderr_buf = Buffer.create 1024
 				in
 				let stdout_sink = Eio.Flow.buffer_sink stdout_buf
 				and stderr_sink = Eio.Flow.buffer_sink stderr_buf
@@ -451,14 +451,14 @@ let run_pipeline ~sw ~proc_mgr ~(models : Input.jg_models2) cmds =
 					Eio.Process.run proc_mgr ?stdin ~stdout: stdout_sink ~stderr: stderr_sink cmd;
 					Option.iter Eio.Resource.close stdin;
 					(* close pipe input after last process *)
-					Ok (stdout_buf, stderr_buf)
+					Ok stdout_buf
 				with
-					| exn -> Error (Printexc.to_string exn)
+					| exn -> Error (exn, stderr_buf)
 			end
 		| {prog; args}, next :: rest ->
 			begin
 				let pipe_in, pipe_out = Eio.Process.pipe ~sw proc_mgr in
-				let stderr_buf = Buffer.create 512 in
+				let stderr_buf = Buffer.create 1024 in
 				let stderr_sink = Eio.Flow.buffer_sink stderr_buf
 				and cmd = List.map (Input.Template.fill ~models) (prog :: args)
 				in
@@ -468,7 +468,7 @@ let run_pipeline ~sw ~proc_mgr ~(models : Input.jg_models2) cmds =
 					(* close writer after child is spawned *)
 					build_pipeline ~stdin: pipe_in (next, rest)
 				with
-					| exn -> Error (Printexc.to_string exn)
+					| exn -> Error (exn, stderr_buf)
 			end
 	in
 	build_pipeline cmds
@@ -482,18 +482,12 @@ let get_latest ~sw ~proc_mgr input : (string option, error) result =
 		and models = Input.jg_models2 input
 		in
 		match run_pipeline ~sw ~proc_mgr ~models cmds with
-		| Error err -> Error (`Latest_cmd_fail (name, err))
-		| Ok (stdout_buf, stderr_buf) ->
-			let stderr_str = String.trim @@ Buffer.contents stderr_buf in
-			(* & shame on you for putting non-errors in the stderr *)
-			if stderr_str <> "" then
-				Error (`Latest_cmd_stderr (name, stderr_str))
-			else
-				let latest_str = String.trim @@ Buffer.contents stdout_buf in
-				if latest_str = "" then
-					Error (`Latest_cmd_empty name)
-				else
-					Ok (Some latest_str)
+		| Error (exn, stderr) ->
+			Error (`Latest_cmd_fail (name, exn, String.trim @@ Buffer.contents stderr))
+		| Ok stdout_buf ->
+			match String.trim @@ Buffer.contents stdout_buf with
+			| "" -> Error (`Latest_cmd_empty name)
+			| latest_str -> Ok (Some latest_str)
 
 type latest_result = [
 	| `LacksCmd
