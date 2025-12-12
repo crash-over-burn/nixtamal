@@ -44,7 +44,7 @@ type input_foreman_error = [
 	| `Latest_cmd_empty of Name.t
 	| `Latest_cmd_fail of Name.t * exn * string
 	| `Prefetch of Name.t * prefetch_error
-	| `Pool_exception of string
+	| `Pool_exception of exn
 	(* FIXME: string list *)
 	| `Many_errors of string list
 ]

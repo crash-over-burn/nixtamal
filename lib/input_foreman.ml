@@ -551,12 +551,9 @@ let lock_many ~env ~sw ~proc_mgr ~domain_count ~force ~(names : Name.t list) : (
 		|> List.fold_left
 				(fun (suc, errs) ->
 					function
-						| Ok (Ok()) ->
-							true, errs
-						| Ok (Error err) ->
-							suc, err :: errs
-						| Error exn ->
-							suc, (`Pool_exception (Printexc.to_string exn)) :: errs
+						| Ok (Ok()) -> true, errs
+						| Ok (Error err) -> suc, err :: errs
+						| Error exn -> suc, (`Pool_exception exn) :: errs
 				)
 				(false, [])
 	in
@@ -633,12 +630,9 @@ let refresh_many ~env ~sw ~proc_mgr ~domain_count ~(names : Name.t list) : (unit
 		|> List.fold_left
 				(fun (suc, errs) ->
 					function
-						| Ok (Ok()) ->
-							true, errs
-						| Ok (Error err) ->
-							suc, err :: errs
-						| Error exn ->
-							suc, (`Pool_exception (Printexc.to_string exn)) :: errs
+						| Ok (Ok()) -> true, errs
+						| Ok (Error err) -> suc, err :: errs
+						| Error exn -> suc, (`Pool_exception exn) :: errs
 				)
 				(false, [])
 	in
