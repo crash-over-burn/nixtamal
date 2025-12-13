@@ -32,10 +32,20 @@ let pp fmt inputs' =
 
 (* Ugly, but *shrug* *)
 let pp_for_earthlings pff =
-	let hp_k_v ppf' (k, v) = Fmt.pf ppf' "\t%s: %s" k v in
+	let hp_k_v ppf' (k, v) =
+		let open Fmt in
+		pf ppf' "\t%a%a %s" (styled `Blue string) k (styled `Faint string) ":" v
+	in
 	let hp_betupled_input ppf' (name, kind, data) =
-		Fmt.pf ppf' "%s: (%s)@;" (Name.take name) kind;
-		Fmt.pf ppf' "%a" (Fmt.list ~sep: (Fmt.any "@.") hp_k_v) data;
+		let open Fmt in
+		pf
+			ppf'
+			"%a: %a@;"
+			(styled `Green string)
+			(Name.take name)
+			(styled `Faint (parens (styled `None (styled `Yellow string))))
+			kind;
+		pf ppf' "%a" (list ~sep: (any "@.") hp_k_v) data;
 	and betuple (input : Input.t) : Name.t * string * (string * string) list =
 		let models = Input.jg_models2 input in
 		let fill = Input.Template.fill ~models in
