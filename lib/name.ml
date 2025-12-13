@@ -15,6 +15,8 @@ module Name = struct
 		(* it’s okay to have fun *)
 		Fmt.pf fmt "「%s」" (take name)
 
+	let show = Fmt.str "%a" pp
+
 	(* String.compare but with nixpkgs at the top *)
 	let compare (Name a) (Name b) =
 		let prio x =
