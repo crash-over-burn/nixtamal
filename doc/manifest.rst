@@ -47,7 +47,7 @@ Default ``manifest.kdl``
 			}
 			hash algorithm=SHA256
 			latest-cmd {
-				$ git ls-remote --heads "https://github.com/NixOS/nixpkgs.git" --refs "refs/heads/nixos-unstable"
+				$ git ls-remote "https://github.com/NixOS/nixpkgs.git" --refs "refs/heads/nixos-unstable"
 				| cut -f1
 			}
 		}

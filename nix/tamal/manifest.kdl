@@ -9,7 +9,7 @@ inputs {
 		}
 		hash algorithm=SHA256
 		latest-cmd {
-			$ git ls-remote --heads "https://github.com/NixOS/nixpkgs.git" --refs "refs/heads/nixpkgs-unstable"
+			$ git ls-remote "https://github.com/NixOS/nixpkgs.git" --branches nixpkgs-unstable
 			| cut -f1
 		}
 	}
