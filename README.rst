@@ -171,6 +171,7 @@ Depending on the content, this project is licensed under one of
 • :t:`ISC License` (``ISC``)
 • :t:`Creative Commons Attribution-ShareAlike 4.0 International`
   (``CC-BY-SA-4.0``)
+• :t:`Mozilla Public License Version 2.0` (``MPL-2.0``)
 
 For details read ``LICENSE.txt`` with full license texts at ``license/``.
 

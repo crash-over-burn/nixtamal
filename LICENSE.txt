@@ -11,5 +11,7 @@ Nixtamal is multi-licensed
   other projects are under the terms of the ISC License (ISC).
 • Schemas are under the terms of Creative Commons Attribution Share Alike 4.0
   International (CC-BY-SA-4.0).
+• A fork of the KDL lenses from ocaml-kdl is is under the terms of the
+  Mozilla Public License Version 2.0 (MPL-2.0)
 
 See `license/` for full texts.
