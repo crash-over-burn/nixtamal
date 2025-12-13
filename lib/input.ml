@@ -81,15 +81,15 @@ module Git = struct
 
 	let default_latest_cmd git : Latest.Cmd.t =
 		let open Latest.Cmd in
-		let git_ls_remote flag value : t =
-			let m = Latest.Cmd.make_cmd in
-			let t = Template.make in
-			~$(m ~prog: (t "git") ~args: [t "ls-remote"; t flag; git.repository; t "--refs"; t value] ())
-			|: (m ~prog: (t "cut") ~args: [t "-f1"] ())
+		let t = Template.make in
+		let git_ls_remote (ls_remote_args : Template.t list) : t =
+			let args = t "ls-remote" :: git.repository :: ls_remote_args in
+			~${prog = t "git"; args}
+			|: {prog = t "cut"; args = [t "-f1"]}
 		in
 		match git.reference with
-		| `Branch b -> git_ls_remote "--branches" b
-		| `Ref r -> git_ls_remote "--heads" r
+		| `Branch b -> git_ls_remote [t "--branches"; t b]
+		| `Ref r -> git_ls_remote [t "--refs"; t r]
 end
 
 module Darcs = struct
@@ -316,25 +316,25 @@ module Nixpkgs = struct
 			"https://mirrors.tuna.tsinghua.edu.cn/git/nixpkgs.git"
 		]
 
-	let mk_latest ~reference ?latest_value () : Latest.t =
-		let mk_latest_cmd ~flag ~arg : Latest.Cmd.t =
-			let open Latest.Cmd in
-			let m = Latest.Cmd.make_cmd in
-			let t = Template.make in
-			~$(m ~prog: (t "git") ~args: [t "ls-remote"; t flag; default_git_repository; t "--refs"; t arg] ())
-			|: (m ~prog: (t "cut") ~args: [t "-f1"] ())
+	let make_latest ~reference ?latest_value () : Latest.t =
+		let open Latest.Cmd in
+		let t = Template.make in
+		let git_ls_remote (ls_remote_args : Template.t list) : t =
+			let args = t "ls-remote" :: default_git_repository :: ls_remote_args in
+			~${prog = t "git"; args}
+			|: {prog = t "cut"; args = [t "-f1"]}
 		in
 		{
 			cmd = begin
 				match reference with
-				| `Ref r -> Some (mk_latest_cmd ~flag: "--heads" ~arg: r);
-				| `Branch b -> Some (mk_latest_cmd ~flag: "--branches" ~arg: b);
+				| `Ref r -> Some (git_ls_remote [t "--refs"; t r])
+				| `Branch b -> Some (git_ls_remote [t "--branches"; t b])
 			end;
 			value = latest_value;
 		}
 
 	let make_archive ?(reference = `Ref default_ref) ?latest_value () =
-		let latest = mk_latest ~reference ?latest_value () in
+		let latest = make_latest ~reference ?latest_value () in
 		let url =
 			Template.make "https://github.com/NixOS/nixpkgs/archive/{{cmd_value}}.tar.gz"
 		in
