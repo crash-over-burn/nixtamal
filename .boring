@@ -1,0 +1,24 @@
+# OCaml
+(^|/)_build($|/)
+\.(a|annot|cma|cmi|cmo|cmx|cmxa|cmxs|o|merlin)$
+
+# Nix
+result*($|/)
+
+# Direnv
+\.envrc$
+(^|/)\.direnv($|/)
+
+# NO to Docker
+Dockerfile
+docker-compose
+
+# NO to Microsoft
+.*\.code-workspace
+\.devcontainer/($|/)
+(^|/).github($|/)
+(^|/).vscode($|/)
+
+# NO to invasive configs
+(^|/)\.husky($|/)
+\.pre-commit-config.(yaml|yml)$

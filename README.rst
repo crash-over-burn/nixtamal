@@ -147,13 +147,14 @@ As they say: read the manpages
 	$ man nixtamal-manifest
 
 
-Building
+Building / hacking
 ===============================================================================
 
 .. code:: console
 
-	$ nix-shell -p darcs \
-		--run "darcs clone https://darcs.toastal.in.th/nixtamal/trunk/ nixtamal"
+	$ nix-shell -p darcs
+	$ darcs clone https://darcs.toastal.in.th/nixtamal/trunk/ nixtamal
+	$ darcs setpref boringfile .boring
 	$ cd nixtamal
 	$ nix-build
 

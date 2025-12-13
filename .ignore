@@ -1,25 +1,14 @@
-/_build
+# Darcs
+_darcs/
+
+# OCaml
+_build/
+*.(a|annot|cma|cmi|cmo|cmx|cmxa|cmxs|o|merlin)
 
 /result
 /result-*
-/.direnv
-/.envrc
+.direnv
+.envrc
 
-/tmp
-/logs
-
-# NO to Microsoft
-devcontainer.json
-.*.code-workspace
-.devcontainer
-.github
-.vscode
-
-# NO to Docker
-Dockerfile
-docker-compose
-
-# NO to invasive configs
-.husky
-.pre-commit-config.yaml
-.pre-commit-config.yml
+tmp/
+logs/
