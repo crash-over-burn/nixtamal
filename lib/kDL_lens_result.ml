@@ -1,6 +1,6 @@
 (*─────────────────────────────────────────────────────────────────────────────┐
 │ SPDX-FileCopyrightText: eilveli                                              │
-│ SPDX-FileContributor: toastal <toastal@posteo.net                            │
+│ SPDX-FileContributor: toastal <toastal@posteo.net>                           │
 │ SPDX-License-Identifier: MPL-2.0                                             │
 │                                                                              │
 │ Upstream: https://github.com/eilvelia/ocaml-kdl                              │
