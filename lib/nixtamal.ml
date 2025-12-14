@@ -174,6 +174,15 @@ let lock ~env ~domain_count ?(force = false) ?names () : (unit, error) result =
 	Lock_loader.write ();
 	Ok ()
 
+let list_stale ~env ~domain_count : (unit, error) result =
+	Eio.Switch.run @@ fun sw ->
+	let (let*) = Result.bind in
+	let proc_mgr = Eio.Stdenv.process_mgr env in
+	let* all_names = read_manifest_and_lockfile () in
+	Error.tag_input_foreman @@ begin
+		Input_foreman.list_stale ~env ~sw ~proc_mgr ~domain_count ~names: all_names
+	end
+
 let refresh ~env ~domain_count ?names () : (unit, error) result =
 	Eio.Switch.run @@ fun sw ->
 	let (let*) = Result.bind in

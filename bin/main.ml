@@ -25,6 +25,7 @@ let cmd ~env =
 		Cmd.Tweak.cmd ~env;
 		Cmd.Show.cmd ~env;
 		Cmd.Lock.cmd ~env;
+		Cmd.List_stale.cmd ~env;
 		Cmd.Refresh.cmd ~env;
 	]
 	in

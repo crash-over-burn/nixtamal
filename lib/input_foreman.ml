@@ -593,6 +593,51 @@ let lock ~env ~sw ~proc_mgr ~domain_count ?(force = false) ?names () : (unit, er
 	| Some names ->
 		lock_many ~env ~sw ~proc_mgr ~domain_count ~force ~names
 
+let list_stale ~env ~sw ~proc_mgr ~domain_count ~names : (unit, error) result =
+	Logs.info (fun m -> m "Listing stale …");
+	let (let*) = Result.bind in
+	let dm = Eio.Stdenv.domain_mgr env in
+	let pool = Eio.Executor_pool.create ~sw ~domain_count dm in
+	let any_succeed, stale, errors =
+		names
+		|> List.map
+				(fun name ->
+					Eio.Executor_pool.submit ~weight: 1.0 pool (fun () ->
+						let* input = get name in
+						match get_latest ~sw ~proc_mgr input with
+						| Error err -> Error err
+						| Ok None -> Ok None
+						| Ok (Some new_value) -> Ok (Some (name, new_value))
+					)
+				)
+		|> List.fold_left
+				(fun (suc, sacc, errs) ->
+					function
+						| Ok (Ok None) -> true, sacc, errs
+						| Ok (Ok (Some stale)) -> true, stale :: sacc, errs
+						| Ok (Error err) -> suc, sacc, err :: errs
+						| Error exn -> suc, sacc, (`Pool_exception exn) :: errs
+				)
+				(false, [], [])
+	in
+	match any_succeed, errors with
+	| true, errs ->
+		begin
+			let warn err =
+				Logs.warn (fun m -> m "Couldn’t refresh: %a" Error.pp_input_foreman_error err)
+			and prnt (name, latest_value) =
+				Logs.app (fun m -> m "%a: %s" Fmt.(styled `Green string) (Name.take name) latest_value)
+			in
+			List.iter warn errs;
+			List.iter prnt stale;
+			Ok ()
+		end
+	| false, [err] ->
+		Error err
+	| false, errs ->
+		let err_str = List.map (fun err -> Fmt.str "%a" Error.pp_input_foreman_error err) errs in
+		Error (`Many_errors err_str)
+
 let refresh_one ~env ~sw ~proc_mgr ~name : (unit, error) result =
 	Logs.app (fun m -> m "Refreshing input %a …" Name.pp name);
 	let (let*) = Result.bind in

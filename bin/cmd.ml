@@ -301,6 +301,28 @@ module Lock = struct
 	let cmd ~env = Cmdliner.Cmd.v info (term ~env)
 end
 
+module List_stale = struct
+	let info =
+		Cmdliner.Cmd.info
+			"list-stale"
+			~doc: "List stale inputs with latest-cmd, without refreshing"
+			~man: common_man
+
+	let run ~env ~domain_count : unit =
+		match Nixtamal.list_stale ~env ~domain_count with
+		| Ok() -> ()
+		| Error err -> failwith (Fmt.str "%a" Nixtamal.Error.pp_error err)
+
+	let term ~env =
+		let open Cmdliner in
+		Term.(
+			const (fun glb -> Global.run ~env glb @@ run)
+			$ Global.args
+		)
+
+	let cmd ~env = Cmdliner.Cmd.v info (term ~env)
+end
+
 module Refresh = struct
 	let info =
 		Cmdliner.Cmd.info
