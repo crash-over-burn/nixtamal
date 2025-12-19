@@ -746,7 +746,7 @@ let write () : (unit, error) result =
 		| Some m -> Ok m
 		| None -> Error `Not_set_up
 	in
-	Logs.app (fun m -> m "Writing manifest @@ %s …" filename);
+	Logs.info (fun m -> m "Writing manifest @@ %s …" filename);
 	let result =
 		Eio.Path.with_open_out ~create: (`Exclusive 0o644) filepath @@ fun flow ->
 		let banner = [
@@ -759,5 +759,5 @@ let write () : (unit, error) result =
 		KDL.to_flow flow mnfst;
 		Eio.Flow.write flow ([Cstruct.of_string "\n"])
 	in
-	Logs.app (fun m -> m "Manifest written.");
+	Logs.info (fun m -> m "Manifest written.");
 	Ok result

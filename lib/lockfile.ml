@@ -467,12 +467,12 @@ let write ?(create = `Or_truncate 0o644) () : (unit, error) result =
 	in
 	let working_dir = Working_directory.get () in
 	let filepath = Eio.Path.(working_dir / filename) in
-	Logs.app (fun m -> m "Writing lockfile @@ %s …" filename);
+	Logs.info (fun m -> m "Writing lockfile @@ %s …" filename);
 	let* result =
 		Eio.Path.with_open_out ~create filepath @@ fun flow ->
 		(* TODO: Util.Jsont.to_flow_piset jsont lock flow *)
 		Util.Jsont.to_flow jsont lock flow
 		|> Result.map_error (fun err -> `Serializing err)
 	in
-	Logs.app (fun m -> m "Lockfile written.");
+	Logs.info (fun m -> m "Lockfile written.");
 	Ok result
