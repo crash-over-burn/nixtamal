@@ -17,6 +17,8 @@ Fulfilling input pinning for Nix (& hopefully more)
 
 Pronunciation
 	/nɪʃ.təˈmal/ *or* /ˈnɪkstəˌmɑːl/
+Alternative spellings
+	• ·𐑯𐑦𐑖𐑑𐑩𐑥𐑭𐑤
 Maker
 	toastal
 Put out
