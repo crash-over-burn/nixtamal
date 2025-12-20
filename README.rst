@@ -152,13 +152,80 @@ As they say: read the manpages
 Building / hacking
 ===============================================================================
 
+Working setup
+-------------------------------------------------------------------------------
+
+If you don’t have Darcs install, you can use from Nixpkgs such as
+
 .. code:: console
 
 	$ nix-shell -p darcs
+
+After/else
+
+.. code:: console
+
 	$ darcs clone https://darcs.toastal.in.th/nixtamal/trunk/ nixtamal
 	$ darcs setpref boringfile .boring
 	$ cd nixtamal
+
+Development environment setup
+-------------------------------------------------------------------------------
+
+Base Nix shell
+
+.. code:: console
+
+	$ nix-shell
+
+Or with Direnv
+
+.. code:: console
+
+	$ echo "use nix" >> .envrc
+	$ direnv allow
+
+Building with Dune
+-------------------------------------------------------------------------------
+
+.. code:: console
+
+	$ dune build
+
+Building with Nix
+-------------------------------------------------------------------------------
+
+Basic
+
+.. code:: console
+
 	$ nix-build
+
+Everything else
+
+.. code:: console
+
+	$ nix-build release.nix
+	$ nix-build release.nix -A nixtamal
+
+Darcs hooks (can skip)
+-------------------------------------------------------------------------------
+
+.. code:: console
+
+   $ chmod +x script/mk-darcs-weak-hash
+   $ $EDITOR _darcs/prefs/defaults
+
+.. code::
+
+	apply posthook script/mk-darcs-weak-hash && nix-build --no-out-link release.nix
+	obliterate posthook script/mk-darcs-weak-hash
+	record posthook script/mk-darcs-weak-hash
+
+Hooks here can:
+	• Build the entire project before applying patches to make sure it works.
+	• Show the WeakHash ``_darcs/weak_hash`` which is good for querying project
+	  state, such as for ``latest-cmd``s (hint, hink).
 
 
 License
