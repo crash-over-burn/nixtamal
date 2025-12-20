@@ -9,6 +9,7 @@ let
       overlays = [
          (import ./nix/overlay/default.nix)
          (import ./nix/overlay/development.nix)
+         (import ./nix/overlay/check.nix)
       ];
    };
 in
@@ -19,8 +20,5 @@ in
 
    shell = pkgs.nixtamal.dev-shell;
 
-   test = {
-      inherit (pkgs.nixtamal) tests;
-   };
-
+   check = pkgs.nixtamal.check;
 }
