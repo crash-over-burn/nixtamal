@@ -43,7 +43,7 @@ ocamlPackages.buildDunePackage {
       in
       fs.toSource {
          root = ../..;
-         fileset = fs.unions [
+         fileset = fs.difference (fs.unions [
             ../../LICENSE.txt
             (fs.fileFilter (file: file.hasExt "txt") ../../license)
             (fs.fileFilter ocaml_project ../..)
@@ -51,7 +51,7 @@ ocamlPackages.buildDunePackage {
             (fs.fileFilter ocaml_src ../../lib)
             (fs.fileFilter ocaml_src ../../test)
             ../../doc/manifest.rst
-         ];
+         ]) (fs.maybeMissing ../../_build);
       };
 
    nativeBuildInputs = [
