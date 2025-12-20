@@ -34,6 +34,9 @@ end_of_line = lf
 indent_style = tab
 insert_final_newline = true
 trim_trailing_whitespace = true
+
+[lock.json]
+insert_final_newline = unset
 |}
 
 let set_up_editor_config ~dir ~content =
