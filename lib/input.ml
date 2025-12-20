@@ -305,8 +305,8 @@ module Nixpkgs = struct
 	let default_git_repository = Template.make "https://github.com/NixOS/nixpkgs.git"
 
 	(* NOTE: "refs/heads/nixpkgs-unstable" is probably good enough for your
- 		project, but defaulting to nixos-unstable since it is ‘safer’, requiring
- 		that all the NixOS tests pass *)
+		project, but defaulting to nixos-unstable since it is ‘safer’, requiring
+		that all the NixOS tests pass *)
 	let default_ref = "refs/heads/nixos-unstable"
 
 	let default_hash = Hash.make ~algorithm: Hash.SHA256 ()

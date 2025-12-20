@@ -84,7 +84,7 @@ let set_exn a v lens =
 	| Error e -> failwith (show_lerr e)
 
 (* note: update can possibly be added to the definition of [lens] to increase
-   performance with more specialized implementations *)
+	performance with more specialized implementations *)
 
 let update f a lens =
 	match lens.get a with

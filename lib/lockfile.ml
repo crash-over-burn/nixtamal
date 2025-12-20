@@ -190,7 +190,7 @@ module Darcs = struct
 		mirrors: URI.t list;
 		datetime: string option;
 		(* Darcs isn’t like the other girls; we don’t have a simple stable reference point.
-		   Either the tag or context can be used. *)
+			Either the tag or context can be used. *)
 		reference: Reference.t;
 		latest_weak_hash: string option;
 	}
