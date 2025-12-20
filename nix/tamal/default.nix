@@ -39,8 +39,7 @@ let
 					let failed-urls' = [ url ] ++ failed-urls; in
 					if builtins.length urls <= 0 then
 						let fus = builtins.concatStringsSep " " failed-urls'; in
-						builtins.throw "Input 「${name}」 fetchable 
-[ ${fus} ]"
+						builtins.throw "Input 「${name}」fetchable @ [ ${fus} ]"
 					else
 						try-fetch' failed-urls' (builtins.head urls) (builtins.tail urls);
 		in
@@ -57,11 +56,11 @@ let
 	builtin-to-input = name: input:
 		let k = builtins.head input.kd; in
 		if k == 1 then
- 			builtin-fetch-tarball {
- 				inherit name;
- 				kind = builtins.elemAt input.kd 1;
- 				hash = input.ha;
- 			}
+			builtin-fetch-tarball {
+				inherit name;
+				kind = builtins.elemAt input.kd 1;
+				hash = input.ha;
+			}
 		else
 			throw "Unsupported input kind “${builtins.toString k}”.";
 
@@ -88,11 +87,11 @@ let
 	to-input = name: input:
 		let k = builtins.head input.kd; in
 		if k == 1 then
- 			fetch-zip {
- 				inherit name;
- 				kind = builtins.elemAt input.kd 1;
- 				hash = input.ha;
- 			}
+			fetch-zip {
+				inherit name;
+				kind = builtins.elemAt input.kd 1;
+				hash = input.ha;
+			}
 		else
 			throw "Unsupported input kind “${builtins.toString k}”.";
 in

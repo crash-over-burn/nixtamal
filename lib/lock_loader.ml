@@ -168,7 +168,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 	let builtin_fetch_ifs = Dynarray.create () in
 	if Features.has Features.file feats then
 		Dynarray.add_last builtin_fetch_ifs (
-			Fmt.str "@[<v 1>%a@]" (list ~sep: cut string) [
+			Fmt.str "@[<v 1>%a@]" (list ~sep: (any "@.") string) [
 				{|		if k == 0 then|};
 				{|			builtin-fetch-url {|};
 				{|				inherit name;|};
@@ -179,7 +179,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 		);
 	if Features.has Features.archive feats then
 		Dynarray.add_last builtin_fetch_ifs (
-			Fmt.str "@[<v 1>%a@]" (list ~sep: cut string) [
+			Fmt.str "@[<v 1>%a@]" (list ~sep: (any "@.") string) [
 				{|if k == 1 then|};
 				{|			builtin-fetch-tarball {|};
 				{|				inherit name;|};
@@ -190,7 +190,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 		);
 	if Features.has Features.git feats then
 		Dynarray.add_last builtin_fetch_ifs (
-			Fmt.str "@[<v 1>%a@]" (list ~sep: cut string) [
+			Fmt.str "@[<v 1>%a@]" (list ~sep: (any "@.") string) [
 				{|if k == 2 then|};
 				{|			builtin-fetch-git {|};
 				{|				inherit name;|};
@@ -198,7 +198,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 				{|			}|};
 			]
 		);
-	pf ppf "@[%a@]@." (list ~sep: (any "@;else ") string) (Dynarray.to_list builtin_fetch_ifs);
+	pf ppf "@[%a@]@." (list ~sep: (any "@.else ") string) (Dynarray.to_list builtin_fetch_ifs);
 	Dynarray.clear builtin_fetch_ifs;
 	pf ppf {|		else@.|};
 	pf ppf {|			throw "Unsupported input kind “${builtins.toString k}”.";@.|};
@@ -317,7 +317,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 	let pkgs_fetch_ifs = Dynarray.create () in
 	if Features.has Features.file feats then
 		Dynarray.add_last pkgs_fetch_ifs (
-			Fmt.str "@[<v 1>%a@]" (list ~sep: cut string) [
+			Fmt.str "@[<v 1>%a@]" (list ~sep: (any "@.") string) [
 				{|if k == 0 then|};
 				{|			fetch-url {|};
 				{|				inherit name;|};
@@ -328,7 +328,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 		);
 	if Features.has Features.archive feats then
 		Dynarray.add_last pkgs_fetch_ifs (
-			Fmt.str "@[<v 1>%a@]" (list ~sep: cut string) [
+			Fmt.str "@[<v 1>%a@]" (list ~sep: (any "@.") string) [
 				{|if k == 1 then|};
 				{|			fetch-zip {|};
 				{|				inherit name;|};
@@ -339,7 +339,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 		);
 	if Features.has Features.git feats then
 		Dynarray.add_last pkgs_fetch_ifs (
-			Fmt.str "@[<v 1>%a@]" (list ~sep: cut string) [
+			Fmt.str "@[<v 1>%a@]" (list ~sep: (any "@.") string) [
 				{|if k == 2 then|};
 				{|			fetch-git {|};
 				{|				inherit name;|};
@@ -350,7 +350,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 		);
 	if Features.has Features.darcs feats then
 		Dynarray.add_last pkgs_fetch_ifs (
-			Fmt.str "@[<v 1>%a@]" (list ~sep: cut string) [
+			Fmt.str "@[<v 1>%a@]" (list ~sep: (any "@.") string) [
 				{|if k == 3 then|};
 				{|			fetch-darcs {|};
 				{|				inherit name;|};
@@ -361,7 +361,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 		);
 	if Features.has Features.pijul feats then
 		Dynarray.add_last pkgs_fetch_ifs (
-			Fmt.str "@[<v 1>%a@]" (list ~sep: cut string) [
+			Fmt.str "@[<v 1>%a@]" (list ~sep: (any "@.") string) [
 				{|if k == 4 then|};
 				{|			fetch-pijul {|};
 				{|				inherit name;|};
@@ -370,7 +370,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 				{|			}|};
 			]
 		);
-	pf ppf "@[%a@]@." (list ~sep: (any "@;else ") string) (Dynarray.to_list pkgs_fetch_ifs);
+	pf ppf "@[%a@]@." (list ~sep: (any "@.else ") string) (Dynarray.to_list pkgs_fetch_ifs);
 	Dynarray.clear pkgs_fetch_ifs;
 	pf ppf {|		else@.|};
 	pf ppf {|			throw "Unsupported input kind “${builtins.toString k}”.";@.|};
