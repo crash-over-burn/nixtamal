@@ -401,9 +401,9 @@ let write ?(version = "0.1.0") () =
 				let () = Features.value := Features.add_input input !Features.value in ()
 			)
 	in
-	Logs.app (fun m -> m "Writing lock loader @@ %s …" filename);
+	Logs.info (fun m -> m "Writing lock loader @@ %s …" filename);
 	let () =
 		Eio.Path.with_open_out ~create: (`Or_truncate 0o644) filepath @@ fun flow ->
 		Util.Formatter.to_flow (pp ~version) flow
 	in
-	Logs.app (fun m -> m "Lock loader written.")
+	Logs.info (fun m -> m "Lock loader written.")
