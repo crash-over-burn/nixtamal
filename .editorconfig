@@ -20,6 +20,19 @@ indent_size = unset
 indent_style = space
 indent_size = 3
 
-[dune,dune-project,dune-workspace]
+[dune]
 indent_style = space
 indent_size = 1
+
+[dune-project]
+indent_style = space
+indent_size = 1
+
+[dune-workspace]
+indent_style = space
+indent_size = 1
+
+# Dune is generating Opam files so I have no control. Should I skip Dune here?
+[*.opam]
+indent_style = unset
+indent_size = unset
