@@ -40,15 +40,14 @@ Nixtamal is a tool to pin input version like its predecessors :t:`niv`,
 • keeps a stable reference pin to supported :ac:`VCS`\s
 • supports mirrors for fetching [1]_
 • supports patch-based :ac:`VCS`\s, like Pijul & Darcs, in a first-class sense
-  (tho ``nixpkgs`` will be required due to Nix ``builtins`` fetchers limitations)
+  (tho ``nixpkgs`` will be required due to Nix ``builtins`` fetchers
+  limitations)
 • uses a :ac:`KDL` manifest file with templating instead of :ac:`CLI` input
-• supports arbitrary commands for getting the latest change
-  for inputs
+• supports arbitrary commands for getting the latest change for inputs
 • refreshes inputs; skips frozen
 • locks new sources
-• supports arbitrary commands for getting the latest change which can be used
-  to avoid costly downloads/clones as well as for templating
-  for inputs
+• supports arbitrary commands for getting the latest change which can be used to
+  avoid costly downloads/clones as well as for templating for inputs
 • does not give any special privilege to any specific code forges
 • source code & community will never be hosted on a proprietary,
   privacy-invasive, megacorporate platform with obligations to shareholders or
@@ -72,10 +71,10 @@ Future goals:
 	after tagged, the maker reserves the right to obliterate & amend patches.
 
 Quickstart
-===============================================================================
+================================================================================
 
 Set up
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 .. code:: console
 
@@ -107,7 +106,7 @@ Set up
 
 
 Use with a Nix project — such as in a ``release.nix``
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 .. code:: nix
 
@@ -120,7 +119,7 @@ Use with a Nix project — such as in a ``release.nix``
 	}
 
 Add a new input to pin
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 See: `<docs/manifest.rst>`_
 
@@ -131,7 +130,7 @@ See: `<docs/manifest.rst>`_
 Opens text editor. & After editing …
 
 Lock or refresh you inputs
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 .. code:: console
 
@@ -139,7 +138,7 @@ Lock or refresh you inputs
 	$ nixtamal refresh
 
 What next?
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 As they say: read the manpages
 
@@ -150,10 +149,10 @@ As they say: read the manpages
 
 
 Building / hacking
-===============================================================================
+================================================================================
 
 Working setup
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 If you don’t have Darcs install, you can use from Nixpkgs such as
 
@@ -170,7 +169,7 @@ After/else
 	$ cd nixtamal
 
 Development environment setup
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 Base Nix shell
 
@@ -186,14 +185,14 @@ Or with Direnv
 	$ direnv allow
 
 Building with Dune
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 .. code:: console
 
 	$ dune build
 
 Building with Nix
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 Basic
 
@@ -209,7 +208,7 @@ Everything else
 	$ nix-build release.nix -A nixtamal
 
 Darcs hooks (can skip)
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 .. code:: console
 
@@ -229,7 +228,7 @@ Hooks here can:
 
 
 License
-===============================================================================
+================================================================================
 
 Depending on the content, this project is licensed under one of
 
