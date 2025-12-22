@@ -30,7 +30,7 @@ let pp fmt inputs' =
 	in
 	Fmt.pf fmt "%a" (NameMap.pp Input.pp) name_map
 
-(* Ugly, but *shrug* *)
+(* Ugly code, but *shrug* *)
 let pp_for_earthlings pff =
 	let hp_k_v ppf' (k, v) =
 		let open Fmt in
@@ -116,7 +116,7 @@ let pp_for_earthlings pff =
 						let cmds' =
 							List.map cmd_str_filled (cmd :: cmds)
 						and formatter =
-							Fmt.list ~sep: (Fmt.any " ") (Fmt.list ~sep: (Fmt.any " ") Fmt.string)
+							Fmt.list ~sep: (Fmt.any " | ") (Fmt.list ~sep: (Fmt.any " ") Fmt.string)
 						in
 							[("latest-cmd", Fmt.str "$ %a" formatter cmds')]
 				);
