@@ -259,7 +259,7 @@ Community is in an :ac:`XMPP` :ac:`MUC` (chatroom) with future hopes to have an
 Funding
 ================================================================================
 
-See choices at the `maker’s website <https://toast.al/funding>`_.
+See choices at the `maker’s website <https://toast.al/funding/>`_.
 
 
 .. [1] :ac:`WIP` with upstream Nixpkgs
