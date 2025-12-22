@@ -89,12 +89,6 @@ Set up
 	Prefetching input 「nixpkgs」 … (this may take a while)
 	Prefetched 「nixpkgs」.
 	Making manifest file @ version:0.1.0
-	Writing manifest @ manifest.kdl …
-	Manifest written.
-	Writing lockfile @ lock.json …
-	Lockfile written.
-	Writing lock loader @ default.nix …
-	Lock loader written.
 
 	$ tree nix/tamal
 	nix/tamal
