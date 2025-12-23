@@ -9,7 +9,7 @@
    ocamlPackages,
    mark-darcs-weak-hash,
    nixtamal,
-   nixfmt-3-space,
+   nixfmt,
    ocamlformat-rpc-bin,
 }:
 
@@ -21,7 +21,7 @@ mkShell {
    packages = [
       kdlfmt
       mark-darcs-weak-hash
-      nixfmt-3-space
+      nixfmt
       topiary
 
       ocamlPackages.alcotest
