@@ -630,7 +630,14 @@ let list_stale ~env: _ ~sw ~proc_mgr ~domain_count ~names : (unit, error) result
 								match get_latest ~sw ~proc_mgr input with
 								| Error err -> Error err
 								| Ok None -> Ok None
-								| Ok (Some new_value) -> Ok (Some (name, new_value))
+								| Ok (Some new_value) ->
+									let is_outdated : string option -> bool =
+										Option.fold ~none: true ~some: (Fun.compose not (String.equal new_value))
+									in
+									if is_outdated input.latest.value then
+										Ok (Some (name, new_value))
+									else
+										Ok None
 							in
 							(* only hold the mutex for shared state updates *)
 							Eio.Mutex.lock result_lock;
