@@ -54,6 +54,10 @@ ocamlPackages.buildDunePackage {
          ]) (fs.maybeMissing ../../_build);
       };
 
+   env = {
+      DUNE_PROFILE = "release";
+   };
+
    nativeBuildInputs = [
       python3Packages.docutils
       # NOTE: no KDL support
