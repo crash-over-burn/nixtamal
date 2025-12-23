@@ -13,4 +13,15 @@ inputs {
 			| cut -f1
 		}
 	}
+	dash-nix {
+		darcs {
+			repository "https://darcs.toastal.in.th/dash-nix"
+			mirrors "https://smeder.ee/~toastal/dash-nix.darcs"
+			"https://hub.darcs.net/toastal/darcs-nix"
+		}
+		latest-cmd {
+			$ curl -fsL "https://darcs.toastal.in.th/dash-nix/_darcs/weak_hash"
+		}
+	}
 }
+

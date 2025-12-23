@@ -84,10 +84,50 @@ let
 		${hash.al} = hash.vl;
 	} // lib.optionalAttrs (builtins.length kind.ms > 0) { urls = kind.ms; };
 
+	fetch-darcs = {name, kind, hash}:
+		let
+			using-mirrors = kind ? ms && (builtins.length kind.ms) > 0;
+			mirror-support = pkgs.fetchdarcs.__functionArgs ? "mirrors";
+			reference =
+				let
+					type = builtins.elemAt kind.rf 0;
+					value = builtins.elemAt kind.rf 1;
+				in
+				if type == 0 then
+					let path = builtins.elemAt value 1; in
+					assert (lib.hasSuffix ".txt" path);
+					let
+						txt-files = lib.sourceFilesBySuffices ./. [ ".txt" ];
+						dir = lib.fileset.toSource {
+							root = ./.;
+							fileset = lib.fileset.fromSource txt-files;
+						};
+					in
+					{context = "${dir}/${path}";}
+				else if type == 1 then
+					{rev = value;}
+				else
+					throw "Invalid Darcs reference";
+		in
+		lib.warnIf (using-mirrors && !mirror-support)
+			"Upstream pkgs.fetchdarcs doesn’t yet support mirrors for 「${name}」"
+			pkgs.fetchdarcs ({
+				url = kind.rp;
+				${hash.al} = hash.vl;
+			} // reference // lib.optionalAttrs (using-mirrors && mirror-support){
+				mirrors = kind.ms;
+			});
+
 	to-input = name: input:
 		let k = builtins.head input.kd; in
 		if k == 1 then
 			fetch-zip {
+				inherit name;
+				kind = builtins.elemAt input.kd 1;
+				hash = input.ha;
+			}
+else if k == 3 then
+			fetch-darcs {
 				inherit name;
 				kind = builtins.elemAt input.kd 1;
 				hash = input.ha;

@@ -7,6 +7,7 @@ let
 
    pkgs = import inputs.nixpkgs {
       overlays = [
+         (import (inputs.dash-nix.outPath + "/nix/overlay"))
          (import ./nix/overlay/default.nix)
          (import ./nix/overlay/development.nix)
          (import ./nix/overlay/check.nix)
