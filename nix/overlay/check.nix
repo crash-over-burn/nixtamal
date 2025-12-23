@@ -5,27 +5,12 @@
 final: prev: {
    nixtamal = prev.nixtamal.overrideScope (
       final': prev': {
-         check = (prev'.check or { }) // {
-            EditorConfig =
-               final.runCommand "check-EditorConfig"
-                  {
-                     src =
-                        let
-                           fs = final.lib.fileset;
-                        in
-                        (fs.toSource {
-                           root = ../..;
-                           fileset = fs.unions [
-                              (fs.fileFilter (file: file.name == ".editorconfig") ../..)
-                              (fs.fromSource prev'.nixtamal.src)
-                              ../../nix
-                           ];
-                        });
-                  }
-                  ''
-                     cd $src
-                     ${final.lib.getExe final.editorconfig-checker} | tee $out
-                  '';
+         check = {
+            format = {
+               EditorConfig = final'.callPackage ../check/editorconfig.nix { };
+
+               nixfmt = final'.callPackage ../check/nixfmt.nix { };
+            };
          };
       }
    );

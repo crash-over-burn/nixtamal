@@ -12,6 +12,8 @@ let
          (import ./nix/overlay/check.nix)
       ];
    };
+
+   inherit (pkgs) lib;
 in
 {
    inherit (pkgs) nixtamal;
@@ -20,5 +22,14 @@ in
 
    shell = pkgs.nixtamal.dev-shell;
 
-   check = pkgs.nixtamal.check;
+   check = lib.concatMapAttrs (
+      parent: children:
+      if lib.isDerivation children then
+         { ${parent} = children; }
+      else
+         lib.mapAttrs' (child: value: {
+            name = "${parent}_${child}";
+            inherit value;
+         }) children
+   ) pkgs.nixtamal.check;
 }
