@@ -7,6 +7,8 @@ final: prev: {
       final': prev': {
          dev-shell = final'.callPackage ../package/dev-shell.nix { };
 
+         mark-darcs-weak-hash = final'.callPackage ../package/mark-darcs-weak-hash.nix { };
+
          nixfmt-3-space = final'.callPackage ../package/nixfmt-3-space.nix { };
 
          ocamlformat-rpc-bin = final'.callPackage ../package/ocamlformat-rpc-bin.nix { };

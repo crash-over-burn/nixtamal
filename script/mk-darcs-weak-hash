@@ -1,4 +1,0 @@
-#!/usr/bin/env dash
-base_dir=$(cd -- "$(dirname -- "$0")/.." && pwd)
-darcs show repo \
-	| awk '/^[[:space:]]*Weak Hash:/ { sub(/^[[:space:]]*Weak Hash:[[:space:]]*/, "", $0); printf $0 }' > "$base_dir/_darcs/weak_hash"

@@ -206,14 +206,13 @@ Darcs hooks (can skip)
 
 .. code:: console
 
-   $ chmod +x script/mk-darcs-weak-hash
    $ $EDITOR _darcs/prefs/defaults
 
 .. code::
 
-	apply posthook script/mk-darcs-weak-hash && nix-build --no-out-link release.nix
-	obliterate posthook script/mk-darcs-weak-hash
-	record posthook script/mk-darcs-weak-hash
+	apply posthook nix-shell --run mk-darcs-weak-hash && nix-build --no-out-link release.nix
+	obliterate posthook nix-shell --run mk-darcs-weak-hash
+	record posthook nix-shell --run mk-darcs-weak-hash
 
 Hooks here can:
 	• Build the entire project before applying patches to make sure it works.

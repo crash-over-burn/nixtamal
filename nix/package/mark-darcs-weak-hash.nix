@@ -3,34 +3,24 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later                                   │
 #──────────────────────────────────────────────────────────────────────────────┘
 {
-   mkShell,
-   kdlfmt,
-   topiary,
-   ocamlPackages,
-   mark-darcs-weak-hash,
-   nixtamal,
-   nixfmt-3-space,
-   ocamlformat-rpc-bin,
+   lib,
+   writeDashBinScript,
+   darcs,
+   gawk,
 }:
 
-mkShell {
-   name = "nixtamal";
-   inputsFrom = [
-      nixtamal
+let
+   path = lib.makeBinPath [
+      darcs
+      gawk
    ];
-   packages = [
-      kdlfmt
-      mark-darcs-weak-hash
-      nixfmt-3-space
-      topiary
+in
+writeDashBinScript {
+   name = "mark-darcs-weak-hash";
+   text = /* sh */ ''
+      export PATH="${path}:$PATH"
 
-      ocamlPackages.alcotest
-      ocamlPackages.qcheck
-      ocamlPackages.qcheck-alcotest
-      ocamlPackages.ocaml-lsp
-      ocamlformat-rpc-bin # 💢 why does the LSP depend on ocamlformat‽
-   ];
-   env = {
-      TOPIARY_CONFIG_FILE = "${../../.topiary.ncl}";
-   };
+      darcs show repo \
+         | awk '/^[[:space:]]*Weak Hash:/ { sub(/^[[:space:]]*Weak Hash:[[:space:]]*/, "", $0); printf $0 }' > "$PWD/_darcs/weak_hash"
+   '';
 }
