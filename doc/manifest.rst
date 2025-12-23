@@ -276,9 +276,7 @@ Local directory checking for latest modification
 			url "file:///home/toastal/my-project"
 		}
 		latest-cmd {
-			$ printf "%s" "{{url}}"
-			| sed "s|^file://||"
-			| xargs find "-print0"
+			$ find "/home/toastal/my-project" "-print0"
 			| xargs "-0" stat -c %Y
 			| sort -n
 			| tail -n1
