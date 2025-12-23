@@ -674,8 +674,8 @@ let refresh_one ~env ~sw ~proc_mgr ~name : (unit, error) result =
 		| Error err -> Error err
 		| Ok None -> Ok `LacksCmd
 		| Ok (Some(new_value : string)) ->
-			Logs.info (fun m -> m "Old latest value: %a" (Fmt.option ~none: (Fmt.const Fmt.string "∅") Fmt.string) input.latest.value);
-			Logs.info (fun m -> m "New latest value: %a" Fmt.string new_value);
+			Logs.info (fun m -> m "%a old latest value: %a" Name.pp name (Fmt.option ~none: (Fmt.const Fmt.string "∅") Fmt.string) input.latest.value);
+			Logs.info (fun m -> m "%a new latest value: %a" Name.pp name Fmt.string new_value);
 			let is_outdated : string option -> bool =
 				Option.fold ~none: true ~some: (Fun.compose not (String.equal new_value))
 			in
