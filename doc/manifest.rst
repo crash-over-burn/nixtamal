@@ -266,6 +266,25 @@ File with mirror + templated nodes
 		}
 	}
 
+Local directory checking for latest modification
+--------------------------------------------------------------------------------
+
+.. code:: text
+
+	soupault-plugins {
+		file {
+			url "file:///home/toastal/my-project"
+		}
+		latest-cmd {
+			$ printf "%s" "{{url}}"
+			| sed "s|^file://||"
+			| xargs find "-print0"
+			| xargs "-0" stat -c %Y
+			| sort -n
+			| tail -n1
+		}
+	}
+
 Basic Pijul with BLAKE3 hash
 --------------------------------------------------------------------------------
 
