@@ -607,8 +607,8 @@ let lock ~env ~sw ~proc_mgr ~domain_count ?(force = false) ?names () : (unit, er
 		lock_many ~env ~sw ~proc_mgr ~domain_count ~force ~names
 
 let list_stale ~env: _ ~sw ~proc_mgr ~domain_count ~names : (unit, error) result =
-	Logs.info (fun m ->
-		m "Listing stale for: %a" Fmt.(brackets (list ~sep: semi Name.pp)) names
+	Logs.debug (fun m ->
+		m "Probing stale for: %a" Fmt.(brackets (list ~sep: semi Name.pp)) names
 	);
 	let sem = Eio.Semaphore.make domain_count
 	and errors = ref []
