@@ -1,1 +1,1 @@
-{"v":"0.1.0","i":{"nixpkgs":{"kd":[1,{"ur":"https://github.com/NixOS/nixpkgs/archive/7d853e518814cca2a657b72eeba67ae20ebf7059.tar.gz","ms":[]}],"ha":{"al":"sha256","vl":"0hsqizh6kqp27gywdl33rpjclz8lls8s757qwa5qkbjb9an0dxlp"},"lv":"7d853e518814cca2a657b72eeba67ae20ebf7059"}}}
+{"v":"0.1.0","i":{"nixpkgs":{"kd":[1,{"ur":"https://github.com/NixOS/nixpkgs/archive/306ea70f9eb0fb4e040f8540e2deab32ed7e2055.tar.gz","ms":[]}],"ha":{"al":"sha256","vl":"1cxf8iw2janh04bcnw93b0sl9mzh94awzzrrdfhig170cssmz8lm"},"lv":"306ea70f9eb0fb4e040f8540e2deab32ed7e2055"}}}
