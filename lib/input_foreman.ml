@@ -248,7 +248,7 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 				Ok ()
 			with
 				| exn ->
-					Error (`RunException (method', exn, String.trim (Buffer.contents stdout_buf)))
+					Error (`Run_exception (method', exn, String.trim (Buffer.contents stdout_buf)))
 		in
 		Ok (String.trim (Buffer.contents stdout_buf))
 	in
