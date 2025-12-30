@@ -30,6 +30,7 @@ end
 module Git = struct
 	type t = {
 		datetime: string option;
+		path: string;
 		rev: string;
 		hash: Hash.t;
 	}
@@ -39,10 +40,11 @@ module Git = struct
 		let open Jsont in
 		Object.map
 			~kind: "Prefetch_Git"
-			(fun datetime rev blake3 sha256 sha512 ->
+			(fun path datetime rev blake3 sha256 sha512 ->
 				let hash = Hash.make_from_opts blake3 sha256 sha512 in
-				make ?datetime ~rev ~hash ()
+				make ~path ?datetime ~rev ~hash ()
 			)
+		|> Object.mem "path" string ~enc: (fun i -> i.path)
 		|> Object.opt_mem "date" string ~enc: (fun i -> i.datetime)
 		|> Object.mem "rev" string ~enc: (fun i -> i.rev)
 		|> Hash.add_jsont_case
@@ -51,6 +53,7 @@ end
 
 module Darcs = struct
 	type t = {
+		path: string;
 		datetime: string option;
 		context: string;
 		weak_hash: string;
@@ -62,10 +65,11 @@ module Darcs = struct
 		let open Jsont in
 		Object.map
 			~kind: "Prefetch_Darcs"
-			(fun datetime context weak_hash blake3 sha256 sha512 ->
+			(fun path datetime context weak_hash blake3 sha256 sha512 ->
 				let hash = Hash.make_from_opts blake3 sha256 sha512 in
-				make ?datetime ~context ~weak_hash ~hash ()
+				make ~path ?datetime ~context ~weak_hash ~hash ()
 			)
+		|> Object.mem "path" string ~enc: (fun i -> i.path)
 		|> Object.opt_mem "date" string ~enc: (fun i -> i.datetime)
 		|> Object.mem "context" string ~enc: (fun i -> i.context)
 		|> Object.mem "weak-hash" string ~enc: (fun i -> i.weak_hash)
@@ -75,6 +79,7 @@ end
 
 module Pijul = struct
 	type t = {
+		path: string;
 		datetime: string option;
 		state: string;
 		hash: Hash.t
@@ -85,10 +90,11 @@ module Pijul = struct
 		let open Jsont in
 		Object.map
 			~kind: "Prefetch_Pijul"
-			(fun datetime state blake3 sha256 sha512 ->
+			(fun path datetime state blake3 sha256 sha512 ->
 				let hash = Hash.make_from_opts blake3 sha256 sha512 in
-				make ?datetime ~state ~hash ()
+				make ~path ?datetime ~state ~hash ()
 			)
+		|> Object.mem "path" string ~enc: (fun i -> i.path)
 		|> Object.opt_mem "date" string ~enc: (fun i -> i.datetime)
 		|> Object.mem "state" string ~enc: (fun i -> i.state)
 		|> Hash.add_jsont_case

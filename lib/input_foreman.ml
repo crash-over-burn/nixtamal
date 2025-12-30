@@ -253,13 +253,14 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		Ok (String.trim (Buffer.contents stdout_buf))
 	in
 	let models = Input.jg_models2 input in
-	let prefetch_file (f : File.t) : (Input.t * string option, Error.prefetch_error) result =
+	let prefetch_file (f : File.t) : (Input.t * string, Error.prefetch_error) result =
 		let method' = `URL
 		and url = Uri.of_string (Input.Template.fill f.url ~models)
 		in
 		let cmd = [
 			"nix-prefetch-url";
 			Uri.to_string url;
+			"--print-path";
 			"--type";
 			hash_algo_type_val;
 		]
@@ -271,29 +272,25 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		| Ok stdout ->
 			begin
 				Logs.debug (fun m -> m "Command output: %s" stdout);
-				let last_nonempty_line =
-					String.split_on_char '\n' stdout
-					|> List.rev
-					|> List.find_opt (fun line -> line <> "")
-				in
-				match last_nonempty_line with
-				| None -> Error (`Empty_output method')
-				| value ->
-					Ok
-						(
-							{input with hash = {input.hash with value}},
-							None
-						)
+				match String.split_on_char '\n' (String.trim stdout) with
+				| hash :: path :: _ when Option.is_some (Eio.Path.native (Eio.Path.(Eio.Stdenv.fs env / path))) ->
+					Ok (
+						{input with hash = {input.hash with value = Some hash}},
+						path
+					)
+				| _ ->
+					Error (`Bad_output (method', stdout))
 			end
 		| Error err -> Error err
 
-	and prefetch_archive (a : Archive.t) : (Input.t * string option, Error.prefetch_error) result =
+	and prefetch_archive (a : Archive.t) : (Input.t * string, Error.prefetch_error) result =
 		let method' = `URL
 		and url = Uri.of_string (Input.Template.fill a.url ~models)
 		in
 		let cmd = [
 			"nix-prefetch-url";
 			Uri.to_string url;
+			"--print-path";
 			"--unpack";
 			"--type";
 			hash_algo_type_val;
@@ -306,22 +303,18 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		| Ok stdout ->
 			begin
 				Logs.debug (fun m -> m "Command output: %s" stdout);
-				let last_nonempty_line =
-					String.split_on_char '\n' stdout
-					|> List.rev
-					|> List.find_opt (fun line -> line <> "")
-				in
-				match last_nonempty_line with
-				| None -> Error (`Empty_output method')
-				| value ->
+				match String.split_on_char '\n' (String.trim stdout) with
+				| hash :: path :: _ when Option.is_some (Eio.Path.native (Eio.Path.(Eio.Stdenv.fs env / path))) ->
 					Ok (
-						{input with hash = {input.hash with value}},
-						None
+						{input with hash = {input.hash with value = Some hash}},
+						path
 					)
+				| _ ->
+					Error (`Bad_output (method', stdout))
 			end
 		| Error err -> Error err
 
-	and prefetch_git (g : Git.t) : (Input.t * string option, Error.prefetch_error) result =
+	and prefetch_git (g : Git.t) : (Input.t * string, Error.prefetch_error) result =
 		let method' = `Git
 		and repository = Uri.of_string (Input.Template.fill g.repository ~models)
 		in
@@ -368,12 +361,12 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 							value = Some data.hash.value;
 						};
 					},
-					Some data.path
+					data.path
 				)
 			end
 		| Error err -> Error err
 
-	and prefetch_darcs (d : Darcs.t) : (Input.t * string option, Error.prefetch_error) result =
+	and prefetch_darcs (d : Darcs.t) : (Input.t * string, Error.prefetch_error) result =
 		let method' = `Darcs
 		and repository = Input.Template.fill d.repository ~models
 		in
@@ -421,12 +414,12 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 							value = Some data.hash.value;
 						};
 					},
-					Some data.path
+					data.path
 				)
 			end
 		| Error err -> Error err
 
-	and prefetch_pijul (p : Pijul.t) : (Input.t * string option, Error.prefetch_error) result =
+	and prefetch_pijul (p : Pijul.t) : (Input.t * string, Error.prefetch_error) result =
 		let method' = `Pijul
 		and cmd = [
 			"nix-prefetch-pijul";
@@ -464,12 +457,12 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 							value = Some data.hash.value;
 						};
 					},
-					Some data.path
+					data.path
 				)
 			end
 		| Error err -> Error err
 	in
-	let* (new_input, new_silo_link_opt) : Input.t * string option =
+	let* (new_input, new_silo_link) : Input.t * string =
 		Result.map_error (fun err -> `Prefetch (input.name, err)) @@ begin
 			match input.kind with
 			| `File f -> prefetch_file f
@@ -480,11 +473,7 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		end
 	in
 	Logs.app (fun m -> m "Prefetched %a." Name.pp input.name);
-	Option.iter
-		(fun link_to ->
-			Working_directory.make_silo_link ~name: (Name.take name) ~link_to
-		)
-		new_silo_link_opt;
+	Working_directory.make_silo_link ~name: (Name.take name) ~link_to: new_silo_link;
 	set name new_input
 
 let run_pipeline ~sw ~proc_mgr ~(models : Input.jg_models2) cmds =

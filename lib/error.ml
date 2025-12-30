@@ -30,6 +30,7 @@ type prefetch_method = [
 
 type prefetch_error = [
 	| `Empty_output of prefetch_method
+	| `Bad_output of prefetch_method * string
 	| `JSON_parsing of prefetch_method * string
 	| `Darcs_context of string
 	| `RunException of prefetch_method * exn * string
