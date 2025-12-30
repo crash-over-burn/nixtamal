@@ -16,7 +16,7 @@
 
 ocamlPackages.buildDunePackage {
    pname = "nixtamal";
-   version = "0.0.6-alpha";
+   version = "0.0.7-alpha";
    release_year = 2025;
 
    src =
