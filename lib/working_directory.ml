@@ -39,10 +39,21 @@ trim_trailing_whitespace = true
 insert_final_newline = unset
 |}
 
+let root_ignore_content =
+	{|silo
+|}
+
 let set_up_editor_config ~dir ~content =
 	let editor_config_file = Eio.Path.(dir / ".editorconfig") in
 	Logs.info (fun m -> m "Writing new Nixtamal EditorConfig%a …" pp_native_path editor_config_file);
 	Eio.Path.with_open_out ~create: (`Or_truncate 0o644) editor_config_file @@ fun flow ->
+	Eio.Buf_write.with_flow flow @@ fun writer ->
+	Eio.Buf_write.string writer content
+
+let set_up_ignore ~dir ~content =
+	let ignore_file = Eio.Path.(dir / ".ignore") in
+	Logs.info (fun m -> m "Writing new Nixtamal ignore%a …" pp_native_path ignore_file);
+	Eio.Path.with_open_out ~create: (`Or_truncate 0o644) ignore_file @@ fun flow ->
 	Eio.Buf_write.with_flow flow @@ fun writer ->
 	Eio.Buf_write.string writer content
 
@@ -52,7 +63,8 @@ let set_up_root () =
 	| `Not_found ->
 		Logs.info (fun m -> m "Making Nixtamal directory%a" pp_native_path dir);
 		Eio.Path.mkdirs ~perm: 0o755 dir;
-		set_up_editor_config ~dir ~content: root_editor_config_content
+		set_up_editor_config ~dir ~content: root_editor_config_content;
+		set_up_ignore ~dir ~content: root_ignore_content
 	| `Directory ->
 		Logs.warn (fun m -> m "Nixtamal directory already exists%a" pp_native_path dir)
 	| _ ->
