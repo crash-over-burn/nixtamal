@@ -557,22 +557,21 @@ let lock_many ~env ~sw ~proc_mgr ~domain_count ~force ~(names : Name.t list) : (
 	in
 	let processes =
 		List.map
-			(fun name ->
-				fun () ->
-					Eio.Semaphore.acquire sem;
-					Fun.protect
-						~finally: (fun () -> Eio.Semaphore.release sem)
-						(fun () ->
-							let lock_result = lock_one ~env ~sw ~proc_mgr ~force ~name in
-							Eio.Mutex.lock result_lock;
-							Fun.protect
-								~finally: (fun () -> Eio.Mutex.unlock result_lock)
-								(fun () ->
-									match lock_result with
-									| Ok() -> any_succeed := true
-									| Error err -> errors := err :: !errors
-								)
-						)
+			(fun name () ->
+				Eio.Semaphore.acquire sem;
+				Fun.protect
+					~finally: (fun () -> Eio.Semaphore.release sem)
+					(fun () ->
+						let lock_result = lock_one ~env ~sw ~proc_mgr ~force ~name in
+						Eio.Mutex.lock result_lock;
+						Fun.protect
+							~finally: (fun () -> Eio.Mutex.unlock result_lock)
+							(fun () ->
+								match lock_result with
+								| Ok() -> any_succeed := true
+								| Error err -> errors := err :: !errors
+							)
+					)
 			)
 			names
 	in
@@ -618,40 +617,39 @@ let list_stale ~env: _ ~sw ~proc_mgr ~domain_count ~names : (unit, error) result
 	in
 	let processes =
 		List.map
-			(fun name ->
-				fun () ->
-					Eio.Semaphore.acquire sem;
-					Fun.protect
-						~finally: (fun () -> Eio.Semaphore.release sem)
-						(fun () ->
-							let result =
-								let (let*) = Result.bind in
-								let* input = get name in
-								match get_latest ~sw ~proc_mgr input with
-								| Error err -> Error err
-								| Ok None -> Ok None
-								| Ok (Some new_value) ->
-									let is_outdated : string option -> bool =
-										Option.fold ~none: true ~some: (Fun.compose not (String.equal new_value))
-									in
-									if is_outdated input.latest.value then
-										Ok (Some (name, new_value))
-									else
-										Ok None
-							in
-							(* only hold the mutex for shared state updates *)
-							Eio.Mutex.lock result_lock;
-							Fun.protect
-								~finally: (fun () -> Eio.Mutex.unlock result_lock)
-								(fun () ->
-									match result with
-									| Ok None -> any_succeed := true
-									| Ok (Some stale) ->
-										any_succeed := true;
-										stale_results := stale :: !stale_results
-									| Error err -> errors := err :: !errors
-								)
-						)
+			(fun name () ->
+				Eio.Semaphore.acquire sem;
+				Fun.protect
+					~finally: (fun () -> Eio.Semaphore.release sem)
+					(fun () ->
+						let result =
+							let (let*) = Result.bind in
+							let* input = get name in
+							match get_latest ~sw ~proc_mgr input with
+							| Error err -> Error err
+							| Ok None -> Ok None
+							| Ok (Some new_value) ->
+								let is_outdated : string option -> bool =
+									Option.fold ~none: true ~some: (Fun.compose not (String.equal new_value))
+								in
+								if is_outdated input.latest.value then
+									Ok (Some (name, new_value))
+								else
+									Ok None
+						in
+						(* only hold the mutex for shared state updates *)
+						Eio.Mutex.lock result_lock;
+						Fun.protect
+							~finally: (fun () -> Eio.Mutex.unlock result_lock)
+							(fun () ->
+								match result with
+								| Ok None -> any_succeed := true
+								| Ok (Some stale) ->
+									any_succeed := true;
+									stale_results := stale :: !stale_results
+								| Error err -> errors := err :: !errors
+							)
+					)
 			)
 			names
 	in
@@ -715,28 +713,26 @@ let refresh_many ~env ~sw ~proc_mgr ~domain_count ~(names : Name.t list) : (unit
 	in
 	let processes =
 		List.map
-			(fun name ->
-				fun () ->
-					Eio.Semaphore.acquire sem;
-					Fun.protect
-						~finally: (fun () -> Eio.Semaphore.release sem)
-						(fun () ->
-							let refresh_result = refresh_one ~env ~sw ~proc_mgr ~name in
-							(* only hold the mutex for the shared state update *)
-							Eio.Mutex.lock result_lock;
-							Fun.protect
-								~finally: (fun () -> Eio.Mutex.unlock result_lock)
-								(fun () ->
-									match refresh_result with
-									| Ok() -> any_succeed := true
-									| Error err -> errors := err :: !errors
-								)
-						)
+			(fun name () ->
+				Eio.Semaphore.acquire sem;
+				Fun.protect
+					~finally: (fun () -> Eio.Semaphore.release sem)
+					(fun () ->
+						let refresh_result = refresh_one ~env ~sw ~proc_mgr ~name in
+						(* only hold the mutex for the shared state update *)
+						Eio.Mutex.lock result_lock;
+						Fun.protect
+							~finally: (fun () -> Eio.Mutex.unlock result_lock)
+							(fun () ->
+								match refresh_result with
+								| Ok() -> any_succeed := true
+								| Error err -> errors := err :: !errors
+							)
+					)
 			)
 			names
 	in
-	Eio.Fiber.all
-		processes;
+	Eio.Fiber.all processes;
 	match !any_succeed, !errors with
 	| true, errs ->
 		List.iter
