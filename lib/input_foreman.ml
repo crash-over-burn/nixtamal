@@ -233,7 +233,7 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		Ok (String.trim (Buffer.contents stdout_buf))
 	in
 	let models = Input.jg_models2 input in
-	let prefetch_file (f : File.t) : (Input.t, Error.prefetch_error) result =
+	let prefetch_file (f : File.t) : (Input.t * string option, Error.prefetch_error) result =
 		let method' = `URL
 		and url = Uri.of_string (Input.Template.fill f.url ~models)
 		in
@@ -258,11 +258,16 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 				in
 				match last_nonempty_line with
 				| None -> Error (`Empty_output method')
-				| value -> Ok {input with hash = {input.hash with value}}
+				| value ->
+					Ok
+						(
+							{input with hash = {input.hash with value}},
+							None
+						)
 			end
 		| Error err -> Error err
 
-	and prefetch_archive (a : Archive.t) : (Input.t, Error.prefetch_error) result =
+	and prefetch_archive (a : Archive.t) : (Input.t * string option, Error.prefetch_error) result =
 		let method' = `URL
 		and url = Uri.of_string (Input.Template.fill a.url ~models)
 		in
@@ -288,11 +293,15 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 				in
 				match last_nonempty_line with
 				| None -> Error (`Empty_output method')
-				| value -> Ok {input with hash = {input.hash with value}}
+				| value ->
+					Ok (
+						{input with hash = {input.hash with value}},
+						None
+					)
 			end
 		| Error err -> Error err
 
-	and prefetch_git (g : Git.t) : (Input.t, Error.prefetch_error) result =
+	and prefetch_git (g : Git.t) : (Input.t * string option, Error.prefetch_error) result =
 		let method' = `Git
 		and repository = Uri.of_string (Input.Template.fill g.repository ~models)
 		in
@@ -327,21 +336,24 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 					Jsont_bytesrw.decode_string Prefetch.Git.jsont stdout
 					|> Result.map_error (fun err -> `JSON_parsing (method', err))
 				in
-				Ok {input with
-					kind =
-					`Git {g with
-						latest_revision = Some data.rev;
-						datetime = data.datetime;
-					};
-					hash = {input.hash with
-						algorithm = data.hash.algorithm;
-						value = Some data.hash.value;
-					};
-				}
+				Ok (
+					{input with
+						kind =
+						`Git {g with
+							latest_revision = Some data.rev;
+							datetime = data.datetime;
+						};
+						hash = {input.hash with
+							algorithm = data.hash.algorithm;
+							value = Some data.hash.value;
+						};
+					},
+					Some data.path
+				)
 			end
 		| Error err -> Error err
 
-	and prefetch_darcs (d : Darcs.t) : (Input.t, Error.prefetch_error) result =
+	and prefetch_darcs (d : Darcs.t) : (Input.t * string option, Error.prefetch_error) result =
 		let method' = `Darcs
 		and repository = Input.Template.fill d.repository ~models
 		in
@@ -376,22 +388,25 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 					| _ ->
 						Ok d.reference
 				in
-				Ok {input with
-					kind =
-					`Darcs {d with
-						reference;
-						datetime = data.datetime;
-						latest_weak_hash = Some data.weak_hash;
-					};
-					hash = {input.hash with
-						algorithm = data.hash.algorithm;
-						value = Some data.hash.value;
-					};
-				}
+				Ok (
+					{input with
+						kind =
+						`Darcs {d with
+							reference;
+							datetime = data.datetime;
+							latest_weak_hash = Some data.weak_hash;
+						};
+						hash = {input.hash with
+							algorithm = data.hash.algorithm;
+							value = Some data.hash.value;
+						};
+					},
+					Some data.path
+				)
 			end
 		| Error err -> Error err
 
-	and prefetch_pijul (p : Pijul.t) : (Input.t, Error.prefetch_error) result =
+	and prefetch_pijul (p : Pijul.t) : (Input.t * string option, Error.prefetch_error) result =
 		let method' = `Pijul
 		and cmd = [
 			"nix-prefetch-pijul";
@@ -417,21 +432,24 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 					Jsont_bytesrw.decode_string Prefetch.Pijul.jsont stdout
 					|> Result.map_error (fun err -> `JSON_parsing (method', err))
 				in
-				Ok {input with
-					kind =
-					`Pijul {p with
-						datetime = data.datetime;
-						latest_state = Some data.state;
-					};
-					hash = {input.hash with
-						algorithm = data.hash.algorithm;
-						value = Some data.hash.value;
-					};
-				}
+				Ok (
+					{input with
+						kind =
+						`Pijul {p with
+							datetime = data.datetime;
+							latest_state = Some data.state;
+						};
+						hash = {input.hash with
+							algorithm = data.hash.algorithm;
+							value = Some data.hash.value;
+						};
+					},
+					Some data.path
+				)
 			end
 		| Error err -> Error err
 	in
-	let* new_input : Input.t =
+	let* (new_input, new_silo_link_opt) : Input.t * string option =
 		Result.map_error (fun err -> `Prefetch (input.name, err)) @@ begin
 			match input.kind with
 			| `File f -> prefetch_file f
@@ -442,6 +460,11 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		end
 	in
 	Logs.app (fun m -> m "Prefetched %a." Name.pp input.name);
+	Option.iter
+		(fun link_to ->
+			Working_directory.make_silo_link ~name: (Name.take name) ~link_to
+		)
+		new_silo_link_opt;
 	set name new_input
 
 let run_pipeline ~sw ~proc_mgr ~(models : Input.jg_models2) cmds =

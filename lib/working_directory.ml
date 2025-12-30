@@ -70,6 +70,11 @@ let set_up_silo () =
 	| _ ->
 		failwith @@ Fmt.str "There is a Nixtamal path, but is not a directory%a" pp_native_path dir
 
+let make_silo_link ~name ~link_to =
+	let path = Eio.Path.(get () / silo_dir / name) in
+	Logs.info (fun m -> m "Filling silo with %s ↦ %a …" name Eio.Path.pp path);
+	Eio.Path.symlink path ~link_to
+
 let set_up_root () =
 	let dir = get () in
 	match Eio.Path.kind ~follow: true dir with
