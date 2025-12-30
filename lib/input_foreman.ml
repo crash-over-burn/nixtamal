@@ -174,6 +174,26 @@ let to_lockfile mk =
 			(fun acc (name, input) -> NameMap.add name (mk input) acc)
 			NameMap.empty
 
+let clean_unlisted_from_silo () =
+	Logs.debug (fun m -> m "Silo: cleaning unlisted …");
+	let silo_path = Eio.Path.(Working_directory.(get () / silo_dir)) in
+	Eio.Path.read_dir silo_path
+	|> List.iter (fun name ->
+			if not (Htbl.mem inputs (Name.make name)) then
+				let path = Eio.Path.(silo_path / name) in
+				match Eio.Path.kind ~follow: false path with
+				| `Symbolic_link ->
+					Eio.Path.unlink path;
+					Logs.info (fun m -> m "Silo: unlinked %a." Eio.Path.pp path)
+				| `Directory | `Regular_file | `Socket ->
+					Eio.Path.rmtree path;
+					Logs.info (fun m -> m "Silo: removed %a." Eio.Path.pp path)
+				| _ ->
+					()
+			else
+					()
+		)
+
 let cp_darcs_context ~env ~(name : Name.t) ~context =
 	let (let*) = Result.bind in
 	let original_path =

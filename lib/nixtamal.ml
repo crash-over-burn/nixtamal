@@ -172,6 +172,7 @@ let lock ~env ~domain_count ?(force = false) ?names () : (unit, error) result =
 	in
 	let* () = Error.tag_lockfile @@ Lockfile.write () in
 	Lock_loader.write ();
+	Input_foreman.clean_unlisted_from_silo ();
 	Ok ()
 
 let list_stale ~env ~domain_count : (unit, error) result =
@@ -200,4 +201,5 @@ let refresh ~env ~domain_count ?names () : (unit, error) result =
 	in
 	let* () = Error.tag_lockfile @@ Lockfile.write () in
 	Lock_loader.write ();
+	Input_foreman.clean_unlisted_from_silo ();
 	Ok ()
