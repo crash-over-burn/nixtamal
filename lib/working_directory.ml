@@ -57,6 +57,19 @@ let set_up_ignore ~dir ~content =
 	Eio.Buf_write.with_flow flow @@ fun writer ->
 	Eio.Buf_write.string writer content
 
+let silo_dir = "silo"
+
+let set_up_silo () =
+	let dir = Eio.Path.(get () / silo_dir) in
+	match Eio.Path.kind ~follow: true dir with
+	| `Directory ->
+		()
+	| `Not_found ->
+		Logs.info (fun m -> m "Making Nixtamal’s silo directory%a" pp_native_path dir);
+		Eio.Path.mkdirs ~perm: 0o755 dir;
+	| _ ->
+		failwith @@ Fmt.str "There is a Nixtamal path, but is not a directory%a" pp_native_path dir
+
 let set_up_root () =
 	let dir = get () in
 	match Eio.Path.kind ~follow: true dir with
@@ -64,6 +77,7 @@ let set_up_root () =
 		Logs.info (fun m -> m "Making Nixtamal directory%a" pp_native_path dir);
 		Eio.Path.mkdirs ~perm: 0o755 dir;
 		set_up_editor_config ~dir ~content: root_editor_config_content;
+		set_up_silo ();
 		set_up_ignore ~dir ~content: root_ignore_content
 	| `Directory ->
 		Logs.warn (fun m -> m "Nixtamal directory already exists%a" pp_native_path dir)
