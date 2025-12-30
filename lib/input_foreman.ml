@@ -368,7 +368,6 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 				let* reference =
 					match d.reference with
 					| `Context (`Assumed _) ->
-						(* TODO: copy file *)
 						let* new_ctx =
 							cp_darcs_context ~env ~name ~context: data.context
 							|> Result.map_error (fun err -> `Darcs_context err)
