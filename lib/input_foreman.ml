@@ -295,14 +295,13 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		| Ok stdout ->
 			begin
 				Logs.debug (fun m -> m "Command output: %s" stdout);
-				match String.split_on_char '\n' (String.trim stdout) with
-				| hash :: path :: _ when Option.is_some (Eio.Path.native (Eio.Path.(Eio.Stdenv.fs env / path))) ->
+				match Prefetch.File.of_stdout ~env stdout with
+				| None -> Error (`Bad_output (method', stdout))
+				| Some {path; hash_value} ->
 					Ok (
-						{input with hash = {input.hash with value = Some hash}},
+						{input with hash = {input.hash with value = Some hash_value}},
 						path
 					)
-				| _ ->
-					Error (`Bad_output (method', stdout))
 			end
 		| Error err -> Error err
 
@@ -326,14 +325,13 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		| Ok stdout ->
 			begin
 				Logs.debug (fun m -> m "Command output: %s" stdout);
-				match String.split_on_char '\n' (String.trim stdout) with
-				| hash :: path :: _ when Option.is_some (Eio.Path.native (Eio.Path.(Eio.Stdenv.fs env / path))) ->
+				match Prefetch.Archive.of_stdout ~env stdout with
+				| None -> Error (`Bad_output (method', stdout))
+				| Some {path; hash_value} ->
 					Ok (
-						{input with hash = {input.hash with value = Some hash}},
+						{input with hash = {input.hash with value = Some hash_value}},
 						path
 					)
-				| _ ->
-					Error (`Bad_output (method', stdout))
 			end
 		| Error err -> Error err
 

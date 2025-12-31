@@ -27,6 +27,40 @@ module Hash = struct
 		|> Object.opt_mem "sha512" string
 end
 
+module File = struct
+	type t = {
+		path: string;
+		hash_value: string;
+	}
+
+	(* env can assert it is a path *)
+	let of_stdout ?env (stdout : string) : t option =
+		match String.split_on_char '\n' (String.trim stdout), env with
+		| hash_value :: path :: _, None ->
+			Some {path; hash_value}
+		| hash_value :: path :: _, Some env' when Option.is_some (Eio.Path.native (Eio.Path.(Eio.Stdenv.fs env' / path))) ->
+			Some {path; hash_value}
+		| _ ->
+			None
+end
+
+module Archive = struct
+	type t = {
+		path: string;
+		hash_value: string;
+	}
+
+	(* env can assert it is a path *)
+	let of_stdout ?env (stdout : string) : t option =
+		match String.split_on_char '\n' (String.trim stdout), env with
+		| hash_value :: path :: _, None ->
+			Some {path; hash_value}
+		| hash_value :: path :: _, Some env' when Option.is_some (Eio.Path.native (Eio.Path.(Eio.Stdenv.fs env' / path))) ->
+			Some {path; hash_value}
+		| _ ->
+			None
+end
+
 module Git = struct
 	type t = {
 		datetime: string option;
