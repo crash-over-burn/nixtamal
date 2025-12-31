@@ -195,7 +195,15 @@ let make_silo_link ~name ~link_to =
 	let path = Eio.Path.(Working_directory.(get () / silo_dir) / name) in
 	Logs.info (fun m -> m "Silo: filling with %s ↦ %a …" name Eio.Path.pp path);
 	unlink_or_rm_silo ~at: (`Path path);
-	Eio.Path.symlink path ~link_to
+	try
+		Eio.Path.symlink path ~link_to
+	with
+		| Eio.(Exn.Io (Fs.E (Fs.Not_found _), _)) ->
+			Logs.debug (fun m -> m "Silo: failed to link %s; will try to set up the silo & retry link …" name);
+			Working_directory.set_up_silo ();
+			Eio.Path.symlink path ~link_to
+		| exn ->
+			raise exn
 
 let clean_unlisted_from_silo () =
 	Logs.debug (fun m -> m "Silo: cleaning unlisted …");
