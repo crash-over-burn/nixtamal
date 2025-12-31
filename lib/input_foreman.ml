@@ -253,169 +253,41 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 	let open Input in
 	let (let*) = Result.bind in
 	let* input = get name in
-	let hash_algo_type_val = Input.Hash.algorithm_to_string_lower input.hash.algorithm in
-	let proc_env =
-		let unix_env = Unix.environment () in
-		Array.append unix_env [|"NIX_HASH_ALGO=" ^ hash_algo_type_val|]
-	in
-	let run_and_gather ?(buffer_size = 1024) method' cmd =
-		let stdout_buf = Buffer.create buffer_size
-		and stderr_buf = Buffer.create buffer_size
-		in
-		let stdout_sink = Eio.Flow.buffer_sink stdout_buf
-		and stderr_sink = Eio.Flow.buffer_sink stderr_buf
-		in
-		let* () =
-			try
-				Eio.Process.run proc_mgr ~env: proc_env ~stdout: stdout_sink ~stderr: stderr_sink cmd;
-				Ok ()
-			with
-				| exn ->
-					Error (`Run_exception (method', exn, String.trim (Buffer.contents stdout_buf)))
-		in
-		Ok (String.trim (Buffer.contents stdout_buf))
-	in
-	let models = Input.jg_models2 input in
-	let prefetch_file (f : File.t) : (Input.t * string, Error.prefetch_error) result =
-		let method' = `URL
-		and url = Uri.of_string (Input.Template.fill f.url ~models)
-		in
-		let cmd = [
-			"nix-prefetch-url";
-			Uri.to_string url;
-			"--print-path";
-			"--type";
-			hash_algo_type_val;
-		]
-		in
-		Logs.debug (fun m -> m "Running file cmd: %a" (Fmt.list ~sep: Fmt.sp Fmt.string) cmd);
-		match run_and_gather method' cmd with
-		| Ok "" ->
-			Error (`Empty_output method')
-		| Ok stdout ->
-			begin
-				Logs.debug (fun m -> m "Command output: %s" stdout);
-				match Prefetch.File.of_stdout ~env stdout with
-				| None -> Error (`Bad_output (method', stdout))
-				| Some {path; hash_value} ->
-					Ok (
-						{input with hash = {input.hash with value = Some hash_value}},
-						path
-					)
-			end
-		| Error err -> Error err
-
-	and prefetch_archive (a : Archive.t) : (Input.t * string, Error.prefetch_error) result =
-		let method' = `URL
-		and url = Uri.of_string (Input.Template.fill a.url ~models)
-		in
-		let cmd = [
-			"nix-prefetch-url";
-			Uri.to_string url;
-			"--print-path";
-			"--unpack";
-			"--type";
-			hash_algo_type_val;
-		]
-		in
-		Logs.debug (fun m -> m "Running archive cmd: %a" (Fmt.list ~sep: Fmt.sp Fmt.string) cmd);
-		match run_and_gather method' cmd with
-		| Ok "" ->
-			Error (`Empty_output method')
-		| Ok stdout ->
-			begin
-				Logs.debug (fun m -> m "Command output: %s" stdout);
-				match Prefetch.Archive.of_stdout ~env stdout with
-				| None -> Error (`Bad_output (method', stdout))
-				| Some {path; hash_value} ->
-					Ok (
-						{input with hash = {input.hash with value = Some hash_value}},
-						path
-					)
-			end
-		| Error err -> Error err
-
-	and prefetch_git (g : Git.t) : (Input.t * string, Error.prefetch_error) result =
-		let method' = `Git
-		and repository = Uri.of_string (Input.Template.fill g.repository ~models)
-		in
-		let cmd = [
-			"nix-prefetch-git";
-			"--no-deepClone";
-			"--quiet";
-			"--url";
-			Uri.to_string repository;
-		]
-		in
-		let cmd =
-			List.concat [
-				cmd;
-				(
-					match g.reference with
-					| `Branch b -> ["--branch-name"; b]
-					| `Ref r -> ["--rev"; r]
-				);
-				if g.submodules then ["--fetch-submodules"] else [];
-				if g.lfs then ["--fetch-lfs"] else [];
-			];
-		in
-		Logs.debug (fun m -> m "Running Git cmd: %a" (Fmt.list ~sep: Fmt.sp Fmt.string) cmd);
-		match run_and_gather method' cmd with
-		| Ok "" ->
-			Error (`Empty_output method')
-		| Ok stdout ->
-			begin
-				Logs.debug (fun m -> m "Command output: %s" stdout);
-				let* data =
-					Jsont_bytesrw.decode_string Prefetch.Git.jsont stdout
-					|> Result.map_error (fun err -> `JSON_parsing (method', err))
-				in
+	let* (new_input, new_silo_link) : Input.t * string =
+		Result.map_error (fun err -> `Prefetch (input.name, err)) @@ begin
+			let* latest_result = Prefetch.get_latest ~env ~proc_mgr input in
+			match input.kind, latest_result with
+			| `File _, `File f_data ->
+				Ok (
+					{input with hash = {input.hash with value = Some f_data.hash_value}},
+					f_data.path
+				)
+			| `Archive _, `Archive a_data ->
+				Ok (
+					{input with hash = {input.hash with value = Some a_data.hash_value}},
+					a_data.path
+				)
+			| `Git g, `Git g_data ->
 				Ok (
 					{input with
 						kind =
 						`Git {g with
-							latest_revision = Some data.rev;
-							datetime = data.datetime;
+							latest_revision = Some g_data.rev;
+							datetime = g_data.datetime;
 						};
 						hash = {input.hash with
-							algorithm = data.hash.algorithm;
-							value = Some data.hash.value;
+							algorithm = g_data.hash.algorithm;
+							value = Some g_data.hash.value;
 						};
 					},
-					data.path
+					g_data.path
 				)
-			end
-		| Error err -> Error err
-
-	and prefetch_darcs (d : Darcs.t) : (Input.t * string, Error.prefetch_error) result =
-		let method' = `Darcs
-		and repository = Input.Template.fill d.repository ~models
-		in
-		let cmd = ["nix-prefetch-darcs"] in
-		(* formatter looks ugly so doing cmd = cmd @ […] *)
-		let cmd =
-			match d.reference with
-			| `Context (`Assumed _) -> cmd
-			| `Context (`Stated sc) -> cmd @ ["--context"; sc]
-			| `Tag t -> cmd @ ["--tag"; t]
-		in
-		let cmd = cmd @ [repository] in
-		Logs.debug (fun m -> m "Running Darcs cmd: %a" (Fmt.list ~sep: Fmt.sp Fmt.string) cmd);
-		match run_and_gather method' cmd with
-		| Ok "" ->
-			Error (`Empty_output method')
-		| Ok stdout ->
-			begin
-				Logs.debug (fun m -> m "Command output: %s" stdout);
-				let* data =
-					Jsont_bytesrw.decode_string Prefetch.Darcs.jsont stdout
-					|> Result.map_error (fun err -> `JSON_parsing (method', err))
-				in
+			| `Darcs d, `Darcs d_data ->
 				let* reference =
 					match d.reference with
 					| `Context (`Assumed _) ->
 						let* new_ctx =
-							cp_darcs_context ~env ~name ~context: data.context
+							cp_darcs_context ~env ~name ~context: d_data.context
 							|> Result.map_error (fun err -> `Darcs_context err)
 						in
 						Ok (`Context (`Assumed (Some new_ctx)))
@@ -427,70 +299,32 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 						kind =
 						`Darcs {d with
 							reference;
-							datetime = data.datetime;
-							latest_weak_hash = Some data.weak_hash;
+							datetime = d_data.datetime;
+							latest_weak_hash = Some d_data.weak_hash;
 						};
 						hash = {input.hash with
-							algorithm = data.hash.algorithm;
-							value = Some data.hash.value;
+							algorithm = d_data.hash.algorithm;
+							value = Some d_data.hash.value;
 						};
 					},
-					data.path
+					d_data.path
 				)
-			end
-		| Error err -> Error err
-
-	and prefetch_pijul (p : Pijul.t) : (Input.t * string, Error.prefetch_error) result =
-		let method' = `Pijul
-		and cmd = [
-			"nix-prefetch-pijul";
-			"--remote";
-			Input.Template.fill p.remote ~models;
-		]
-		in
-		let cmd =
-			cmd @
-				match p.reference with
-				| `Change c -> ["--change"; c]
-				| `Channel c -> ["--channel"; c]
-				| `State s -> ["--state"; s]
-		in
-		Logs.debug (fun m -> m "Running Pijul cmd: %a" (Fmt.list ~sep: Fmt.sp Fmt.string) cmd);
-		match run_and_gather method' cmd with
-		| Ok "" ->
-			Error (`Empty_output method')
-		| Ok stdout ->
-			begin
-				Logs.debug (fun m -> m "Command output: %s" stdout);
-				let* data =
-					Jsont_bytesrw.decode_string Prefetch.Pijul.jsont stdout
-					|> Result.map_error (fun err -> `JSON_parsing (method', err))
-				in
+			| `Pijul p, `Pijul p_data ->
 				Ok (
 					{input with
 						kind =
 						`Pijul {p with
-							datetime = data.datetime;
-							latest_state = Some data.state;
+							datetime = p_data.datetime;
+							latest_state = Some p_data.state;
 						};
 						hash = {input.hash with
-							algorithm = data.hash.algorithm;
-							value = Some data.hash.value;
+							algorithm = p_data.hash.algorithm;
+							value = Some p_data.hash.value;
 						};
 					},
-					data.path
+					p_data.path
 				)
-			end
-		| Error err -> Error err
-	in
-	let* (new_input, new_silo_link) : Input.t * string =
-		Result.map_error (fun err -> `Prefetch (input.name, err)) @@ begin
-			match input.kind with
-			| `File f -> prefetch_file f
-			| `Archive a -> prefetch_archive a
-			| `Git g -> prefetch_git g
-			| `Darcs d -> prefetch_darcs d
-			| `Pijul p -> prefetch_pijul p
+			| _, _ -> failwith "Prefetch kind mismatch"
 		end
 	in
 	Logs.app (fun m -> m "Prefetched %a." Name.pp input.name);
