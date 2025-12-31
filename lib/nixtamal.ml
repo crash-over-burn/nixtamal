@@ -98,12 +98,12 @@ let set_up ~env ?nixpkgs: nixpkgs_opt () : (unit, error) result =
 	Working_directory.set_up_root ();
 	if Manifest.exists () then
 		begin
-			Logs.err (fun m ->
+			Logs.warn (fun m ->
 				m
-					"Found existing “%s” file, so project is already set up. Quitting."
+					"Found existing “%s” file, so project is already set up. Skipping."
 					Manifest.filename
 			);
-			Error (`Manifest `File_already_exists)
+			Ok ()
 		end
 	else
 		(* TODO: returns a bool for success, so what to do? *)
