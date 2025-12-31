@@ -57,7 +57,7 @@ let set_up_ignore ~dir ~content =
 	Eio.Buf_write.with_flow flow @@ fun writer ->
 	Eio.Buf_write.string writer content
 
-let silo_dir = "silo"
+let silo_dir = ".silo"
 
 let set_up_silo () =
 	let dir = Eio.Path.(get () / silo_dir) in
