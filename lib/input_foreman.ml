@@ -174,22 +174,37 @@ let to_lockfile mk =
 			(fun acc (name, input) -> NameMap.add name (mk input) acc)
 			NameMap.empty
 
+let unlink_or_rm_silo ~(at : [`Path of _ Eio.Path.t | `Name of Name.t]) =
+	let path =
+		match at with
+		| `Path p -> p
+		| `Name n -> Eio.Path.(Working_directory.(get () / silo_dir) / Name.take n)
+	in
+	match Eio.Path.kind ~follow: false path with
+	| `Symbolic_link ->
+		Eio.Path.unlink path;
+		Logs.debug (fun m -> m "Silo: unlinked %a." Eio.Path.pp path)
+	| `Directory | `Regular_file | `Socket ->
+		Eio.Path.rmtree path;
+		Logs.debug (fun m -> m "Silo: removed %a." Eio.Path.pp path)
+	| _ ->
+		()
+
+let make_silo_link ~name ~link_to =
+	let name = Name.take name in
+	let path = Eio.Path.(Working_directory.(get () / silo_dir) / name) in
+	Logs.info (fun m -> m "Silo: filling with %s ↦ %a …" name Eio.Path.pp path);
+	unlink_or_rm_silo ~at: (`Path path);
+	Eio.Path.symlink path ~link_to
+
 let clean_unlisted_from_silo () =
 	Logs.debug (fun m -> m "Silo: cleaning unlisted …");
 	let silo_path = Eio.Path.(Working_directory.(get () / silo_dir)) in
 	Eio.Path.read_dir silo_path
-	|> List.iter (fun name ->
-			if not (Htbl.mem inputs (Name.make name)) then
-				let path = Eio.Path.(silo_path / name) in
-				match Eio.Path.kind ~follow: false path with
-				| `Symbolic_link ->
-					Eio.Path.unlink path;
-					Logs.info (fun m -> m "Silo: unlinked %a." Eio.Path.pp path)
-				| `Directory | `Regular_file | `Socket ->
-					Eio.Path.rmtree path;
-					Logs.info (fun m -> m "Silo: removed %a." Eio.Path.pp path)
-				| _ ->
-					()
+	|> List.iter (fun nm ->
+			let name = Name.make nm in
+			if not (Htbl.mem inputs name) then
+				unlink_or_rm_silo ~at: (`Name name)
 			else
 					()
 		)
@@ -473,7 +488,7 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		end
 	in
 	Logs.app (fun m -> m "Prefetched %a." Name.pp input.name);
-	Working_directory.make_silo_link ~name: (Name.take name) ~link_to: new_silo_link;
+	make_silo_link ~name ~link_to: new_silo_link;
 	set name new_input
 
 let run_pipeline ~sw ~proc_mgr ~(models : Input.jg_models2) cmds =
