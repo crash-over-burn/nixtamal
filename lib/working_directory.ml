@@ -24,6 +24,10 @@ let pp_native_path =
 		Eio.Path.native
 		(Fmt.option (fun ppf -> Fmt.pf ppf " @@ %a" Fmt.string))
 
+let silo_dir = ".silo"
+
+let darcs_context_dir = "darcs_context"
+
 (* Without the need for magic strings, we can use tabs in Nix! *)
 let root_editor_config_content =
 	{|root = true
@@ -40,8 +44,14 @@ insert_final_newline = unset
 |}
 
 let root_ignore_content =
-	{|silo
-|}
+	let open Fmt in
+	str
+		"%a@."
+		(list ~sep: (Fmt.any "@.") string)
+		[
+			silo_dir;
+			darcs_context_dir
+		]
 
 let set_up_editor_config ~dir ~content =
 	let editor_config_file = Eio.Path.(dir / ".editorconfig") in
@@ -56,8 +66,6 @@ let set_up_ignore ~dir ~content =
 	Eio.Path.with_open_out ~create: (`Or_truncate 0o644) ignore_file @@ fun flow ->
 	Eio.Buf_write.with_flow flow @@ fun writer ->
 	Eio.Buf_write.string writer content
-
-let silo_dir = ".silo"
 
 let set_up_silo () =
 	let dir = Eio.Path.(get () / silo_dir) in
@@ -83,8 +91,6 @@ let set_up_root () =
 		Logs.warn (fun m -> m "Nixtamal directory already exists%a" pp_native_path dir)
 	| _ ->
 		failwith @@ Fmt.str "There is a Nixtamal path, but is not a directory%a" pp_native_path dir
-
-let darcs_context_dir = "darcs_context"
 
 let darcs_context_editor_config_content =
 	{|root = true
