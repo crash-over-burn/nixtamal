@@ -1,5 +1,5 @@
 #──────────────────────────────────────────────────────────────────────────────┐
-# SPDX-FileCopyrightText: 2025 toastal <https://toast.al/contact/>             │
+# SPDX-FileCopyrightText: 2025–2026 toastal <https://toast.al/contact/>        │
 # SPDX-License-Identifier: LGPL-2.1-or-later                                   │
 #──────────────────────────────────────────────────────────────────────────────┘
 {
@@ -16,8 +16,8 @@
 
 ocamlPackages.buildDunePackage {
    pname = "nixtamal";
-   version = "0.0.8-alpha";
-   release_year = 2025;
+   version = "0.0.9-alpha";
+   release_year = 2026;
 
    src =
       let
