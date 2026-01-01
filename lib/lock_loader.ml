@@ -120,7 +120,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 	pf ppf {|					let failed-urls' = [ url ] ++ failed-urls; in@.|};
 	pf ppf {|					if builtins.length urls <= 0 then@.|};
 	pf ppf {|						let fus = builtins.concatStringsSep " " failed-urls'; in@.|};
-	pf ppf {|						builtins.throw "Input 「${name}」fetchable @@ [ ${fus} ]"@.|};
+	pf ppf {|						throw "Input 「${name}」fetchable @@ [ ${fus} ]"@.|};
 	pf ppf {|					else@.|};
 	pf ppf {|						try-fetch' failed-urls' (builtins.head urls) (builtins.tail urls);@.|};
 	pf ppf {|		in@.|};
