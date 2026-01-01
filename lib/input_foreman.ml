@@ -1,5 +1,5 @@
 (*─────────────────────────────────────────────────────────────────────────────┐
-│ SPDX-FileCopyrightText: 2025 toastal <https://toast.al/contact/>             │
+│ SPDX-FileCopyrightText: 2025–2026 toastal <https://toast.al/contact/>        │
 │ SPDX-License-Identifier: LGPL-2.1-or-later WITH OCaml-LGPL-linking-exception │
 └─────────────────────────────────────────────────────────────────────────────*)
 open Name
@@ -190,20 +190,25 @@ let unlink_or_rm_silo ~(at : [`Path of _ Eio.Path.t | `Name of Name.t]) =
 	| _ ->
 		()
 
-let make_silo_link ~name ~link_to =
+let make_silo_gc_root ~proc_mgr ~name ~store_path =
 	let name = Name.take name in
-	let path = Eio.Path.(Working_directory.(get () / silo_dir) / name) in
-	Logs.info (fun m -> m "Silo: filling with %s ↦ %a …" name Eio.Path.pp path);
+	let silo_path = Eio.Path.(Working_directory.(get () / silo_dir)) in
+	begin
+		match Eio.Path.kind ~follow: false silo_path with
+		| `Directory -> ()
+		| `Not_found -> Working_directory.set_up_silo ()
+		| _ -> failwith (Fmt.str "%a not a directory" Eio.Path.pp silo_path)
+	end;
+	let path = Eio.Path.(silo_path / name) in
+	Logs.info (fun m -> m "Silo: filling with %s ↦ %s …" name store_path);
 	unlink_or_rm_silo ~at: (`Path path);
-	try
-		Eio.Path.symlink path ~link_to
-	with
-		| Eio.(Exn.Io (Fs.E (Fs.Not_found _), _)) ->
-			Logs.debug (fun m -> m "Silo: failed to link %s; will try to set up the silo & retry link …" name);
-			Working_directory.set_up_silo ();
-			Eio.Path.symlink path ~link_to
-		| exn ->
-			raise exn
+	Eio.Process.run proc_mgr [
+		"nix-store";
+		"--add-root";
+		Eio.Path.native_exn path;
+		"--realize";
+		store_path
+	]
 
 let clean_unlisted_from_silo () =
 	Logs.debug (fun m -> m "Silo: cleaning unlisted …");
@@ -253,7 +258,7 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 	let open Input in
 	let (let*) = Result.bind in
 	let* input = get name in
-	let* (new_input, new_silo_link) : Input.t * string =
+	let* (new_input, new_silo_path) : Input.t * string =
 		Result.map_error (fun err -> `Prefetch (input.name, err)) @@ begin
 			let* latest_result = Prefetch.get_latest ~env ~proc_mgr input in
 			match input.kind, latest_result with
@@ -328,7 +333,7 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 		end
 	in
 	Logs.app (fun m -> m "Prefetched %a." Name.pp input.name);
-	make_silo_link ~name ~link_to: new_silo_link;
+	make_silo_gc_root ~proc_mgr ~name ~store_path: new_silo_path;
 	set name new_input
 
 let run_pipeline ~sw ~proc_mgr ~(models : Input.jg_models2) cmds =
