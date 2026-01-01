@@ -1,5 +1,5 @@
 (*─────────────────────────────────────────────────────────────────────────────┐
-│ SPDX-FileCopyrightText: 2025 toastal <https://toast.al/contact/>             │
+│ SPDX-FileCopyrightText: 2025–2026 toastal <https://toast.al/contact/>        │
 │ SPDX-License-Identifier: LGPL-2.1-or-later WITH OCaml-LGPL-linking-exception │
 └─────────────────────────────────────────────────────────────────────────────*)
 (* Loads the lockfile for Nix usage broadly *)
@@ -268,8 +268,8 @@ let pp_body ~version (ppf : Format.formatter) () =
 			pf ppf {|					value = builtins.elemAt kind.rf 1;@.|};
 			pf ppf {|				in@.|};
 			pf ppf {|				if type == 0 then@.|};
-			pf ppf {|					let path = builtins.elemAt value 1; in@.|};
-			pf ppf {|					assert (lib.hasSuffix ".txt" path);@.|};
+			pf ppf {|					let ctx_path = builtins.elemAt value 1; in@.|};
+			pf ppf {|					assert (lib.hasSuffix ".txt" ctx_path);@.|};
 			pf ppf {|					let@.|};
 			pf ppf {|						txt-files = lib.sourceFilesBySuffices ./. [ ".txt" ];@.|};
 			pf ppf {|						dir = lib.fileset.toSource {@.|};
@@ -277,7 +277,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 			pf ppf {|							fileset = lib.fileset.fromSource txt-files;@.|};
 			pf ppf {|						};@.|};
 			pf ppf {|					in@.|};
-			pf ppf {|					{context = "${dir}/${path}";}@.|};
+			pf ppf {|					{context = "${dir}/${ctx_path}";}@.|};
 			pf ppf {|				else if type == 1 then@.|};
 			pf ppf {|					{rev = value;}@.|};
 			pf ppf {|				else@.|};
