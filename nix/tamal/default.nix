@@ -1,5 +1,5 @@
 /*
-SPDX-FileCopyrightText: 2025 toastal
+SPDX-FileCopyrightText: 2025–2026 toastal
 SPDX-License-Identifier: ISC
 
 Permission to use, copy, modify, and/or distribute this software for any
@@ -39,7 +39,7 @@ let
 					let failed-urls' = [ url ] ++ failed-urls; in
 					if builtins.length urls <= 0 then
 						let fus = builtins.concatStringsSep " " failed-urls'; in
-						builtins.throw "Input 「${name}」fetchable @ [ ${fus} ]"
+						throw "Input 「${name}」fetchable @ [ ${fus} ]"
 					else
 						try-fetch' failed-urls' (builtins.head urls) (builtins.tail urls);
 		in
@@ -94,8 +94,8 @@ let
 					value = builtins.elemAt kind.rf 1;
 				in
 				if type == 0 then
-					let path = builtins.elemAt value 1; in
-					assert (lib.hasSuffix ".txt" path);
+					let ctx_path = builtins.elemAt value 1; in
+					assert (lib.hasSuffix ".txt" ctx_path);
 					let
 						txt-files = lib.sourceFilesBySuffices ./. [ ".txt" ];
 						dir = lib.fileset.toSource {
@@ -103,7 +103,7 @@ let
 							fileset = lib.fileset.fromSource txt-files;
 						};
 					in
-					{context = "${dir}/${path}";}
+					{context = "${dir}/${ctx_path}";}
 				else if type == 1 then
 					{rev = value;}
 				else
