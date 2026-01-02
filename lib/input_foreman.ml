@@ -190,6 +190,15 @@ let unlink_or_rm_silo ~(at : [`Path of _ Eio.Path.t | `Name of Name.t]) =
 	| _ ->
 		()
 
+(* TODO: make
+	.silo/{name}/elotl
+	.silo/{name}/milpa
+	.silo/{name}/by-hash
+
+	Where elotl (ear of maize) refers to the one using now & milpa
+	(maizefield) refers to the generation. This is similar to profiles &
+	could allow rollbacks & such.
+*)
 let make_silo_gc_root ~proc_mgr ~name ~store_path =
 	let name = Name.take name in
 	let silo_path = Eio.Path.(Working_directory.(get () / silo_dir)) in
@@ -200,12 +209,20 @@ let make_silo_gc_root ~proc_mgr ~name ~store_path =
 		| _ -> failwith (Fmt.str "%a not a directory" Eio.Path.pp silo_path)
 	end;
 	let path = Eio.Path.(silo_path / name) in
-	Logs.info (fun m -> m "Silo: filling with %s ↦ %s …" name store_path);
-	unlink_or_rm_silo ~at: (`Path path);
+	begin
+		match Eio.Path.kind ~follow: false path with
+		| `Directory -> ()
+		| `Symbolic_link -> Eio.Path.unlink path;
+		| `Regular_file | `Socket -> Eio.Path.rmtree path;
+		| _ -> ()
+	end;
+	Logs.info (fun m -> m "Silo: elotl now %s ↦ %s …" name store_path);
+	let elotl_path = Eio.Path.(path / "elotl") in
+	unlink_or_rm_silo ~at: (`Path elotl_path);
 	Eio.Process.run proc_mgr [
 		"nix-store";
 		"--add-root";
-		Eio.Path.native_exn path;
+		Eio.Path.native_exn elotl_path;
 		"--realize";
 		store_path
 	]
