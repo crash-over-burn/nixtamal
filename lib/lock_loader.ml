@@ -391,7 +391,7 @@ let pp ~version (ppf : Format.formatter) =
 	pf ppf "@.@.";
 	pp_body ~version ppf ()
 
-let write ?(version = "0.1.0") () =
+let write ?(version = "0.1.1") () =
 	let working_dir = Working_directory.get () in
 	let filepath = Eio.Path.(working_dir / filename) in
 	let () =

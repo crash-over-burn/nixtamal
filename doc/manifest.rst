@@ -6,7 +6,7 @@ Setting up for pinning down inputs
 --------------------------------------------------------------------------------
 
 :author: toastal
-:version: 0.1.0
+:version: 0.1.1
 
 .. role:: ab
 .. role:: ac
@@ -39,7 +39,7 @@ Default ``manifest.kdl``
 
 .. code:: text
 
-	version "0.1.0"
+	version "0.1.1"
 	inputs {
 		nixpkgs {
 			archive {

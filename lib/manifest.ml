@@ -721,7 +721,7 @@ let read () =
 	let () = manifest := Some kdl in
 	Ok kdl
 
-let make ?(version = "0.1.0") () =
+let make ?(version = "0.1.1") () =
 	Logs.app (fun m -> m "Making manifest file @@ version:%s" version);
 	let open KDL in
 	let doc = [

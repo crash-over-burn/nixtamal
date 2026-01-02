@@ -88,7 +88,7 @@ Set up
 	Fetching latest value for 「nixpkgs」 …
 	Prefetching input 「nixpkgs」 … (this may take a while)
 	Prefetched 「nixpkgs」.
-	Making manifest file @ version:0.1.0
+	Making manifest file @ version:0.1.1
 
 	$ tree nix/tamal
 	nix/tamal
