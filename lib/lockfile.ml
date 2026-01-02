@@ -128,10 +128,10 @@ module Git = struct
 		|> Object.mem "rp" URI.jsont ~enc: (fun i -> i.repository)
 		|> Object.mem "ms" (list URI.jsont) ~enc: (fun i -> i.mirrors)
 		(*|> Object.mem "rf" Reference.jsont ~enc: (fun i -> i.reference)*)
-		|> Object.opt_mem "dt" string ~enc: (fun i -> i.datetime)
+		|> Object.mem "dt" (option string) ~enc: (fun i -> i.datetime)
 		|> Object.mem "sm" bool ~enc: (fun i -> i.submodules)
 		|> Object.mem "lf" bool ~enc: (fun i -> i.lfs)
-		|> Object.opt_mem "lr" string ~enc: (fun i -> i.latest_revision)
+		|> Object.mem "lr" (option string) ~enc: (fun i -> i.latest_revision)
 		|> Object.finish
 end
 
@@ -219,9 +219,9 @@ module Darcs = struct
 			)
 		|> Object.mem "rp" URI.jsont ~enc: (fun i -> i.repository)
 		|> Object.mem "ms" (list URI.jsont) ~enc: (fun i -> i.mirrors)
-		|> Object.opt_mem "dt" string ~enc: (fun i -> i.datetime)
+		|> Object.mem "dt" (option string) ~enc: (fun i -> i.datetime)
 		|> Object.mem "rf" Reference.jsont ~enc: (fun i -> i.reference)
-		|> Object.opt_mem "lw" string ~enc: (fun i -> i.latest_weak_hash)
+		|> Object.mem "lw" (option string) ~enc: (fun i -> i.latest_weak_hash)
 		|> Object.finish
 end
 
@@ -285,7 +285,7 @@ module Pijul = struct
 		)
 		|> Object.mem "rm" URI.jsont ~enc: (fun i -> i.remote)
 		|> Object.mem "ms" (list URI.jsont) ~enc: (fun i -> i.mirrors)
-		|> Object.opt_mem "dt" string ~enc: (fun i -> i.datetime)
+		|> Object.mem "dt" (option string) ~enc: (fun i -> i.datetime)
 		(* |> Object.mem "rf" Reference.jsont ~enc: (fun i -> i.reference) *)
 		|> Object.mem "ls" (option string) ~enc: (fun i -> i.latest_state)
 		|> Object.finish
@@ -399,7 +399,7 @@ module Input' = struct
 		Object.map ~kind: "Input_lock" (fun kind hash latest_value -> {kind; hash; latest_value})
 		|> Object.mem "kd" Kind.jsont ~enc: (fun i -> i.kind)
 		|> Object.mem "ha" Hash.jsont ~enc: (fun i -> i.hash)
-		|> Object.opt_mem "lv" string ~enc: (fun i -> i.latest_value)
+		|> Object.mem "lv" (option string) ~enc: (fun i -> i.latest_value)
 		|> Object.finish
 end
 
