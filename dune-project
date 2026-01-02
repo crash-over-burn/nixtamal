@@ -31,8 +31,14 @@
   ppx_deriving_qcheck
   uri
   (alcotest :with-test)
-  (qcheck :with-test)
-  (qcheck-alcotest :with-test))
+  (qcheck
+   (and
+    :with-test
+    (>= 0.91)))
+  (qcheck-alcotest
+   (and
+    :with-test
+    (>= 0.91))))
  (tags ("nix")))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html

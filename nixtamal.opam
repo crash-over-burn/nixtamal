@@ -21,8 +21,8 @@ depends: [
   "ppx_deriving_qcheck"
   "uri"
   "alcotest" {with-test}
-  "qcheck" {with-test}
-  "qcheck-alcotest" {with-test}
+  "qcheck" {with-test & >= "0.91"}
+  "qcheck-alcotest" {with-test & >= "0.91"}
   "odoc" {with-doc}
 ]
 build: [
