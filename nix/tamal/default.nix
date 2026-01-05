@@ -27,7 +27,7 @@ OF THIS SOFTWARE.
 }:
 
 let lock = builtins.fromJSON (builtins.readFile ./lock.json); in
-assert (lock.v == "0.1.0");
+assert (lock.v == "0.1.1");
 let
 	try-fetch = name: fetcher:
 		let
