@@ -126,7 +126,7 @@ let
 				kind = builtins.elemAt input.kd 1;
 				hash = input.ha;
 			}
-else if k == 3 then
+		else if k == 3 then
 			fetch-darcs {
 				inherit name;
 				kind = builtins.elemAt input.kd 1;

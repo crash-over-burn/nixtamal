@@ -169,7 +169,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 	if Features.has Features.file feats then
 		Dynarray.add_last builtin_fetch_ifs (
 			Fmt.str "@[<v 1>%a@]" (list ~sep: (any "@.") string) [
-				{|		if k == 0 then|};
+				{|if k == 0 then|};
 				{|			builtin-fetch-url {|};
 				{|				inherit name;|};
 				{|				kind = builtins.elemAt input.kd 1;|};
@@ -198,7 +198,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 				{|			}|};
 			]
 		);
-	pf ppf "@[%a@]@." (list ~sep: (any "@.else ") string) (Dynarray.to_list builtin_fetch_ifs);
+	pf ppf "@[%a@]@." (list ~sep: (any "@.		else ") string) (Dynarray.to_list builtin_fetch_ifs);
 	Dynarray.clear builtin_fetch_ifs;
 	pf ppf {|		else@.|};
 	pf ppf {|			throw "Unsupported input kind “${builtins.toString k}”.";@.|};
@@ -370,7 +370,7 @@ let pp_body ~version (ppf : Format.formatter) () =
 				{|			}|};
 			]
 		);
-	pf ppf "@[%a@]@." (list ~sep: (any "@.else ") string) (Dynarray.to_list pkgs_fetch_ifs);
+	pf ppf "@[%a@]@." (list ~sep: (any "@.		else ") string) (Dynarray.to_list pkgs_fetch_ifs);
 	Dynarray.clear pkgs_fetch_ifs;
 	pf ppf {|		else@.|};
 	pf ppf {|			throw "Unsupported input kind “${builtins.toString k}”.";@.|};
