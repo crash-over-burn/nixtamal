@@ -1,0 +1,291 @@
+..
+	┏┓╻+╻ ╱┏┳┓┏┓┏┳┓┏┓╻
+	┃┃┃┃┗━┓╹┃╹┣┫┃┃┃┣┫┃
+	╹┗┛╹╱ ╹ ╹ ╹╹╹ ╹╹╹┗┛
+= Nixtamal
+:author: toastal
+
+== Pronunciation
+/nɪʃ.təˈmal/ _or_ /ˈnɪkstəˌmɑːl/
+
+Alternative spellings::
+* ·𐑯𐑦𐑖𐑑𐑩𐑥𐑭𐑤
+
+Maker:: toastal
+
+Put out:: 2026
+
+Languages::
+* OCaml
+* Nix
+* KDL
+* JSON
+
+Version:: 0.0.9-alpha (alpha stage)
+
+== Purpose
+
+Nixtamal is a tool to pin input version like its predecessors niv, npins, Pinch, Yae, & so on — as well as Nix’s flakes. While philosophically positioned as a flake alternative/complement, nixtamal embraces dual workflow compatibility to empower users with choice and provide ecosystem access. This strategic approach maintains core values of freedom, comprehensive VCS support, and declarative purity while bridging traditional and modern Nix development patterns. Features include:
+
+* keeps a stable reference pin to supported VCSs
+* supports mirrors for fetching [1]
+* supports patch-based VCSs, like Pijul & Darcs, in a first-class sense (tho nixpkgs will be required due to Nix builtins fetchers limitations)
+* uses a KDL manifest file with templating instead of CLI input
+* supports arbitrary commands for getting the latest change for inputs
+* refreshes inputs; skips frozen
+* locks new sources
+* supports arbitrary commands for getting the latest change which can be used to avoid costly downloads/clones as well as for templating for inputs
+* does not give any special privilege to any specific code forges
+* source code & community will never be hosted on a proprietary, privacy-invasive, megacorporate platform with obligations to shareholders or venture capital
+* licensed for your freedom
+* ML-family programming (feels closer to Nix)
+
+Future goals (planned but not yet implemented):
+
+* migrations from prior manifest × lockfile versions
+* migrations from Flakes, Npins, & Niv
+* more VCSs
+* nixtamal heal for common pitfalls in manifest.kdl
+* TUI?
+* provide a flake-like specification for project layout, but with less holes
+
+WARNING: As this software is in the alpha stage, the maker reserves the right make breaking changes file schemas & CLI API. Additionally, anything after tagged, the maker reserves the right to obliterate & amend patches.
+
+== Quickstart
+
+=== Set up
+
+[source,console]
+----
+$ nixtamal set-up
+┏┓╻+╻ ╱┏┳┓┏┓┏┳┓┏┓╻
+┃┃┃┃┗━┓╹┃╹┣┫┃┃┃┣┫┃
+╹┗┛╹╱ ╹ ╹ ╹╹╹ ╹╹╹┗┛
+
+Creating Nixtamal directory @ ./nix/tamal
+Writing new Nixtamal EditorConfig @ ./nix/tamal/.editorconfig …
+Fetching latest value for 「nixpkgs」 …
+Prefetching input 「nixpkgs」 … (this may take a while)
+Prefetched 「nixpkgs」.
+Making manifest file @ version:0.1.1
+
+$ tree nix/tamal
+nix/tamal
+├── default.nix
+├── lock.json
+└── manifest.kdl
+
+1 directory, 3 files
+----
+
+=== Use with a Nix project — such as in a release.nix
+
+[source,nix]
+----
+let
+	inputs = import nix/tamal { };
+	pkgs = import inputs.nixpkgs { };
+in
+{
+	inherit (pkgs) hello;
+}
+----
+
+=== Add a new input to pin
+
+See: link:docs/manifest.rst[]
+
+[source,console]
+----
+$ nixtamal tweak
+----
+
+Opens text editor. & After editing …
+
+=== Lock or refresh you inputs
+
+[source,console]
+----
+$ nixtamal lock
+$ nixtamal refresh
+----
+
+=== What next?
+
+Manpages are under development (TODO). For now, refer to the docs/ directory.
+
+[source,console]
+----
+$ man nixtamal  # TODO
+$ man nixtamal-manifest  # TODO
+----
+
+== Building / hacking
+
+=== Working setup
+
+If you don’t have Darcs install, you can use from Nixpkgs such as
+
+[source,console]
+----
+$ nix-shell -p darcs
+----
+
+After/else
+
+[source,console]
+----
+$ darcs clone https://darcs.toastal.in.th/nixtamal/trunk/ nixtamal
+$ darcs setpref boringfile .boring
+$ cd nixtamal
+----
+
+=== Development environment setup
+
+Base Nix shell
+
+[source,console]
+----
+$ nix-shell
+----
+
+Or with Direnv
+
+[source,console]
+----
+$ echo "use nix" >> .envrc
+$ direnv allow
+----
+
+=== Building with Dune
+
+[source,console]
+----
+$ dune build
+----
+
+=== Building with Nix
+
+Basic
+
+[source,console]
+----
+$ nix-build
+----
+
+Everything else
+
+[source,console]
+----
+$ nix-build release.nix
+$ nix-build release.nix -A nixtamal
+----
+
+=== Building with Flakes (New: Phase 1 Integration)
+
+Nixtamal now supports dual workflow compatibility, providing both traditional Nix and modern flake interfaces. The flake integration acts as an ecosystem bridge while maintaining nixtamal's core philosophy as a flake alternative/complement.
+
+Basic flake build
+
+[source,console]
+----
+$ nix flake build
+$ nix build .#nixtamal
+$ nix build .#default
+----
+
+Development shell
+
+[source,console]
+----
+$ nix develop
+$ nix shell .#nixtamal
+----
+
+Check available outputs
+
+[source,console]
+----
+$ nix flake show
+----
+
+All outputs available:
+- `packages.{system}.nixtamal` and `packages.{system}.default`
+- `devShells.{system}.default` (development environment)  
+- `checks.{system}` (build verification)
+- `lib` (ecosystem bridge functions)
+- `apps.nixtamal` (direct application interface)
+
+=== Hybrid Workflows
+
+The flake integration enables sophisticated hybrid patterns where nixtamal manages specific dependencies while flakes handle the outer project structure:
+
+[source,nix]
+----
+# Example: Using nixtamal within a flake project
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs";
+    nixtamal.url = "path:./nixtamal";
+  };
+  
+  outputs = { self, nixpkgs, nixtamal }: {
+    # Use nixtamal for complex VCS dependencies
+    packages.x86_64-linux.myproject = 
+      nixpkgs.legacyPackages.x86_64-linux.callPackage ./project.nix {
+        # Leverage nixtamal's superior VCS support
+        inputs = nixtamal.lib.fromNixtamalProject ./inputs;
+      };
+  };
+}
+----
+
+This approach preserves nixtamal's philosophical positioning while providing modern development experience and ecosystem integration.
+
+=== Darcs hooks (can skip)
+
+[source,console]
+----
+$ $EDITOR _darcs/prefs/defaults
+----
+
+[source]
+----
+apply posthook nix-shell --run mk-darcs-weak-hash && nix-build --no-out-link release.nix
+obliterate posthook nix-shell --run mk-darcs-weak-hash
+record posthook nix-shell --run mk-darcs-weak-hash
+----
+
+Hooks here can:
+
+* Build the entire project before applying patches to make sure it works.
+* Show the WeakHash _darcs/weak_hash which is good for querying project state, such as for latest-cmds (hint, hink).
+
+== License
+
+Depending on the content, this project is licensed under one of
+
+* GNU General Public License, version 3.0 later (GPL-3.0-or-later)
+* GNU Lesser General Public License version 2.1 or later (LGPL-2.1-or-later) with & without the OCaml LGPL Linking Exception (OCaml-LGPL-linking-exception)
+* ISC License (ISC)
+* Creative Commons Attribution-ShareAlike 4.0 International (CC-BY-SA-4.0)
+* Mozilla Public License Version 2.0 (MPL-2.0)
+
+For details read LICENSE.txt with full license texts at license/.
+
+== Pitching in
+
+Currently this is best done by sending a patchset to toastal+nixtamal@posteo.net or DM me a remote to clone @ toastal@toastal.in.th.
+
+Community is in an XMPP MUC (chatroom) with future hopes to have an IRC gateway. Join @ xmpp:nixtamal@chat.toastal.in.th?join.
+
+Additionally, please read the PITCHING_IN.rst file for other information/expectations.
+
+== Funding
+
+See choices at the maker’s website https://toast.al/funding/.
+
+[1] WIP with upstream Nixpkgs
+
+* Darcs: https://github.com/NixOS/nixpkgs/pull/467172
+* Pijul: https://github.com/NixOS/nixpkgs/pull/467890
