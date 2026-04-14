@@ -16,6 +16,8 @@ module Features = struct
 	let git = 1 lsl 2
 	let darcs = 1 lsl 3
 	let pijul = 1 lsl 4
+	let nilla = 1 lsl 5
+	let fossil = 1 lsl 6
 
 	let [@inline]has mask v = (mask land v) <> 0
 	let [@inline]add mask v = mask lor v
@@ -30,6 +32,8 @@ module Features = struct
 		| `Git _ -> add git
 		| `Darcs _ -> add darcs
 		| `Pijul _ -> add pijul
+		| `Nilla _ -> add nilla
+		| `Fossil _ -> add fossil
 
 	let drop_input (input : Input.t) : t -> t =
 		match input.kind with
@@ -38,6 +42,8 @@ module Features = struct
 		| `Git _ -> drop git
 		| `Darcs _ -> drop darcs
 		| `Pijul _ -> drop pijul
+		| `Nilla _ -> drop nilla
+		| `Fossil _ -> drop fossil
 end
 
 open Fmt

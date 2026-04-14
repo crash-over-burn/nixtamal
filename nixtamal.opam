@@ -9,7 +9,7 @@ tags: ["nix"]
 depends: [
   "dune" {>= "3.20"}
   "camomile"
-  "cmdliner"
+  "cmdliner" {>= "2.0.0"}
   "eio"
   "eio_main"
   "fmt"

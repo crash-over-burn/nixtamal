@@ -379,6 +379,147 @@ module Pijul = struct
 	}
 end
 
+module Nilla = struct
+	module Reference = struct
+		type t = Input.Nilla.Reference.t
+		[@@deriving show, eq, qcheck]
+
+		let codec : t KDL.codec = {
+			to_kdl = (fun ref ->
+				let open KDL in
+				match ref with
+				| `Branch b -> [KDL.node "branch" ~args: [arg (`String b)] []]
+				| `Ref r -> [KDL.node "ref" ~args: [arg (`String r)] []]
+			);
+			of_kdl = (fun kdl ->
+				let open KDL.L in
+				let open KDL.Valid in
+				let node_names = ["branch"; "ref"]
+				and branch = ll @@ kdl.@(node "branch" // arg 0 // string_value)
+				and ref = ll @@ kdl.@(node "ref" // arg 0 // string_value)
+				in
+				match branch, ref with
+				| Ok b, Error _ -> Ok (`Branch b)
+				| Error _, Ok r -> Ok (`Ref r)
+				| Error _, Error _ -> Error [`OneRequired node_names]
+				| _, _ -> Error [`OnlyOneOf node_names]
+			);
+		}
+	end
+
+	type t = {
+		repository: Template.t;
+		mirrors: Template.t list;
+		reference: Reference.t;
+		path: Template.t;
+	}
+	[@@deriving show, eq, make, qcheck]
+
+	let [@inline]to_manifest ({repository; mirrors; reference; path; _}: Input.Nilla.t) : t =
+		make ~repository ~mirrors ~reference ~path ()
+
+	let [@inline]of_manifest ({repository; mirrors; reference; path}: t) : Input.Nilla.t =
+		Input.Nilla.make ~repository ~mirrors ~reference ~path ()
+
+	let codec : t KDL.codec = {
+		to_kdl = (fun nilla ->
+			let open KDL in
+			let repository =
+				node "repository" ~args: [Template.to_arg nilla.repository] []
+			and path =
+				node "path" ~args: [Template.to_arg nilla.path] []
+			and nodes =
+				Reference.codec.to_kdl nilla.reference
+			in
+			let nodes =
+				if List.is_empty nilla.mirrors then
+					nodes
+				else
+					node "mirrors" ~args: (List.map Template.to_arg nilla.mirrors) [] :: nodes
+			in
+			let nodes = path :: repository :: nodes in
+				[node "nilla" nodes]
+		);
+		of_kdl = (fun kdl ->
+			let open KDL.L in
+			let open KDL.Valid in
+			let* nilla = ll @@ kdl.@(node "nilla") in
+			let+ repository = Template.of_child ~name: "repository" nilla
+			and+ mirrors = Template.of_mirrors nilla
+			and+ reference = Reference.codec.of_kdl nilla.children
+			and+ path = Template.of_child ~name: "path" nilla
+			in
+				{repository; mirrors; reference; path}
+		);
+	}
+end
+
+module Fossil = struct
+	module Reference = struct
+		type t = Input.Fossil.Reference.t
+		[@@deriving show, eq, qcheck]
+
+		let codec : t KDL.codec = {
+			to_kdl = (fun ref ->
+				let open KDL in
+				match ref with
+				| `Branch c -> [KDL.node "branch" ~args: [arg (`String c)] []]
+				| `Tag s -> [KDL.node "tag" ~args: [arg (`String s)] []]
+				| `Checkin c -> [KDL.node "check-in" ~args: [arg (`String c)] []]
+			);
+			of_kdl = (fun kdl ->
+				let open KDL.L in
+				let open KDL.Valid in
+				let node_names = ["branch"; "tag"; "check-in"]
+				and branch = ll @@ kdl.@(node "branch" // arg 0 // string_value)
+				and tag = ll @@ kdl.@(node "tag" // arg 0 // string_value)
+				and checkin = ll @@ kdl.@(node "check-in" // arg 0 // string_value)
+				in
+				match branch, tag, checkin with
+				| Ok b, Error _, Error _ -> Ok (`Branch b)
+				| Error _, Ok t, Error _ -> Ok (`Tag t)
+				| Error _, Error _, Ok c -> Ok (`Checkin c)
+				| Error _, Error _, Error _ -> Error [`OneRequired node_names]
+				| _, _, _ -> Error [`OnlyOneOf node_names]
+			);
+		}
+	end
+
+	type t = {
+		repository: Template.t;
+		reference: Reference.t;
+	}
+	[@@deriving show, eq, make, qcheck]
+
+	let [@inline]to_manifest ({repository; reference; _}: Input.Fossil.t) : t =
+		make ~repository ~reference
+
+	let [@inline]of_manifest ({repository; reference}: t) : Input.Fossil.t =
+		Input.Fossil.make ~repository ~reference ()
+
+	let codec : t KDL.codec = {
+		to_kdl = (fun fossil ->
+			let open KDL in
+			let repository =
+				node "repository" ~args: [Template.to_arg fossil.repository] []
+			and nodes =
+				Reference.codec.to_kdl fossil.reference
+			in
+			let nodes = repository :: nodes in
+				[node "fossil" nodes]
+		);
+		of_kdl = (fun kdl ->
+			let open KDL.L in
+			let open KDL.Valid in
+			let* fossil = ll @@ kdl.@(node "fossil") in
+			let+ repository = Template.of_child ~name: "repository" fossil
+			and+ reference = Reference.codec.of_kdl fossil.children
+			in
+				{repository; reference}
+		);
+	}
+end
+
 module Kind = struct
 	type t = [
 		| `File of File.t
@@ -386,6 +527,8 @@ module Kind = struct
 		| `Git of Git.t
 		| `Darcs of Darcs.t
 		| `Pijul of Pijul.t
+		| `Nilla of Nilla.t
+		| `Fossil of Fossil.t
 	]
 	[@@deriving show, eq, qcheck]
 
@@ -395,6 +538,8 @@ module Kind = struct
 		| `Git g -> `Git (Git.to_manifest g)
 		| `Darcs d -> `Darcs (Darcs.to_manifest d)
 		| `Pijul p -> `Pijul (Pijul.to_manifest p)
+		| `Nilla n -> `Nilla (Nilla.to_manifest n)
+		| `Fossil f -> `Fossil (Fossil.to_manifest f)
 
 	let of_manifest : t -> Input.Kind.t = function
 		| `File f -> `File (File.of_manifest f)
@@ -402,6 +547,8 @@ module Kind = struct
 		| `Git g -> `Git (Git.of_manifest g)
 		| `Darcs d -> `Darcs (Darcs.of_manifest d)
 		| `Pijul p -> `Pijul (Pijul.of_manifest p)
+		| `Nilla n -> `Nilla (Nilla.of_manifest n)
+		| `Fossil f -> `Fossil (Fossil.of_manifest f)
 
 	let codec : t KDL.codec = {
 		to_kdl = (function
@@ -410,27 +557,35 @@ module Kind = struct
 			| `Git g -> Git.codec.to_kdl g
 			| `Darcs d -> Darcs.codec.to_kdl d
 			| `Pijul p -> Pijul.codec.to_kdl p
+			| `Nilla n -> Nilla.codec.to_kdl n
+			| `Fossil f -> Fossil.codec.to_kdl f
 		);
 		of_kdl = (fun kdl ->
-			let kind_names = ["file"; "archive"; "git"; "darcs"; "pijul"] in
+			let kind_names = ["file"; "archive"; "git"; "darcs"; "pijul"; "nilla"; "fossil"] in
 			match File.codec.of_kdl kdl,
 			Archive.codec.of_kdl kdl,
 			Git.codec.of_kdl kdl,
 			Darcs.codec.of_kdl kdl,
-			Pijul.codec.of_kdl kdl with
-			| Ok file, Error _, Error _, Error _, Error _ ->
+			Pijul.codec.of_kdl kdl,
+			Nilla.codec.of_kdl kdl,
+			Fossil.codec.of_kdl kdl with
+			| Ok file, Error _, Error _, Error _, Error _, Error _, Error _ ->
 				Ok (`File file)
-			| Error _, Ok archive, Error _, Error _, Error _ ->
+			| Error _, Ok archive, Error _, Error _, Error _, Error _, Error _ ->
 				Ok (`Archive archive)
-			| Error _, Error _, Ok git, Error _, Error _ ->
+			| Error _, Error _, Ok git, Error _, Error _, Error _, Error _ ->
 				Ok (`Git git)
-			| Error _, Error _, Error _, Ok darcs, Error _ ->
+			| Error _, Error _, Error _, Ok darcs, Error _, Error _, Error _ ->
 				Ok (`Darcs darcs)
-			| Error _, Error _, Error _, Error _, Ok pijul ->
+			| Error _, Error _, Error _, Error _, Ok pijul, Error _, Error _ ->
 				Ok (`Pijul pijul)
-			| Error _, Error _, Error _, Error _, Error _ ->
+			| Error _, Error _, Error _, Error _, Error _, Ok nilla, Error _ ->
+				Ok (`Nilla nilla)
+			| Error _, Error _, Error _, Error _, Error _, Error _, Ok fossil ->
+				Ok (`Fossil fossil)
+			| Error _, Error _, Error _, Error _, Error _, Error _, Error _ ->
 				Error [`OneRequired kind_names]
-			| _, _, _, _, _ ->
+			| _, _, _, _, _, _, _ ->
 				Error [`OnlyOneOf kind_names]
 		);
 	}

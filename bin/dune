@@ -13,6 +13,7 @@
   logs.cli
   logs.fmt
   uri)
+ (flags (:standard -alert -deprecated))
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq ppx_deriving.ord ppx_deriving.make)))
 

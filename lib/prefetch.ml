@@ -50,6 +50,17 @@ module Hash = struct
 		|> Object.opt_mem "blake3" string
 		|> Object.opt_mem "sha256" string
 		|> Object.opt_mem "sha512" string
+
+	(* Parse SRI hash like "sha256-XpTlkQ6FXaK0SgN0bu/yji2NASPDuseVaO5bgdFROkM=" *)
+	let make_from_SRI_hash (value : string) : t =
+		match String.split_on_char '-' value with
+		| [algo_str; sri_value] ->
+			(
+				match Input.Hash.algorithm_of_string algo_str with
+				| Some algorithm -> {algorithm; value = sri_value}
+				| None -> Jsont.Error.msgf Jsont.Meta.none "Unsupported hash algorithm: %s" algo_str
+			)
+		| _ -> Jsont.Error.msgf Jsont.Meta.none "Invalid SRI hash format: %s" value
 end
 
 module File = struct
@@ -264,6 +275,106 @@ module Pijul = struct
 		|> Result.map_error (fun err -> `JSON_parsing (method', err))
 end
 
+module Nilla = struct
+	type t = {
+		datetime: string option;
+		path: string;
+		rev: string;
+		hash: Hash.t;
+	}
+	[@@deriving make, show]
+
+	let jsont : t Jsont.t =
+		let open Jsont in
+		Object.map
+			~kind: "Prefetch_Nilla"
+			(fun path datetime rev blake3 sha256 sha512 ->
+				let hash = Hash.make_from_opts blake3 sha256 sha512 in
+				make ~path ?datetime ~rev ~hash ()
+			)
+		|> Object.mem "path" string ~enc: (fun i -> i.path)
+		|> Object.opt_mem "date" string ~enc: (fun i -> i.datetime)
+		|> Object.mem "rev" string ~enc: (fun i -> i.rev)
+		|> Hash.add_jsont_case
+		|> Object.finish
+
+	let latest_cmd (n : Input.Nilla.t) ~models =
+		let cmd = [
+			"nix-prefetch-git";
+			"--no-deepClone";
+			"--quiet";
+			"--url";
+			URI.to_string (URI.of_string (Input.Template.fill n.repository ~models));
+		]
+		in
+		List.concat [
+			cmd;
+			(
+				match n.reference with
+				| `Branch b -> ["--branch-name"; b]
+				| `Ref r -> ["--rev"; r]
+			);
+		]
+
+	let get_latest ~proc_mgr ~proc_env (n : Input.Nilla.t) ~models =
+		let (let*) = Result.bind in
+		let method' = `Nilla in
+		let* stdout = run_and_gather ~proc_mgr ~proc_env method' (latest_cmd n ~models) in
+		let* parsed = Jsont_bytesrw.decode_string jsont stdout
+			|> Result.map_error (fun err -> `JSON_parsing (method', err))
+		in
+		let nilla_path = Input.Template.fill n.path ~models in
+		let full_path = Filename.concat parsed.path nilla_path in
+		if Sys.file_exists full_path then
+			Ok {parsed with path = full_path}
+		else
+			Error (`Bad_output (method', Printf.sprintf "nilla.nix not found at path '%s' in repository" nilla_path))
+end
+
+module Fossil = struct
+	type t = {
+		path: string;
+		datetime: string option;
+		checkin: string;
+		hash: Hash.t
+	}
+	[@@deriving make, show]
+
+	let jsont : t Jsont.t =
+		let open Jsont in
+		Object.map
+			~kind: "Prefetch_Fossil"
+			(fun path datetime checkin hash_str ->
+				let hash = Hash.make_from_SRI_hash hash_str in
+				make ~path ?datetime ~checkin ~hash ()
+			)
+		|> Object.mem "path" string ~enc: (fun i -> i.path)
+		|> Object.opt_mem "date" string ~enc: (fun i -> i.datetime)
+		|> Object.mem "rev" string ~enc: (fun i -> i.checkin)
+		|> Object.mem "hash" string
+		|> Object.finish
+
+	let latest_cmd (f : Input.Fossil.t) ~models =
+		let cmd = [
+			"nix-prefetch-fossil";
+			"--url";
+			URI.to_string (URI.of_string (Input.Template.fill f.repository ~models));
+		]
+		in
+		cmd @
+			match f.reference with
+			| `Branch b -> ["--rev"; b]
+			| `Tag t -> ["--rev"; t]
+			| `Checkin c -> ["--rev"; c]
+
+	let get_latest ~proc_mgr ~proc_env (f : Input.Fossil.t) ~models =
+		let (let*) = Result.bind in
+		let method' = `Fossil in
+		let* stdout = run_and_gather ~proc_mgr ~proc_env method' (latest_cmd f ~models) in
+		Jsont_bytesrw.decode_string jsont stdout
+		|> Result.map_error (fun err -> `JSON_parsing (method', err))
+end
+
 type prefetch_kind_result = (
 	[
 		| `File of File.t
@@ -271,6 +382,8 @@ type prefetch_kind_result = (
 		| `Git of Git.t
 		| `Darcs of Darcs.t
 		| `Pijul of Pijul.t
+		| `Nilla of Nilla.t
+		| `Fossil of Fossil.t
 	],
 	error
 ) result
@@ -298,3 +411,9 @@ let get_latest ~env ~proc_mgr (input : Input.t) : prefetch_kind_result =
 	| `Pijul pijul ->
 		Pijul.get_latest ~proc_mgr ~proc_env pijul ~models
 		|> Result.map (fun p -> `Pijul p)
+	| `Nilla nilla ->
+		Nilla.get_latest ~proc_mgr ~proc_env nilla ~models
+		|> Result.map (fun n -> `Nilla n)
+	| `Fossil fossil ->
+		Fossil.get_latest ~proc_mgr ~proc_env fossil ~models
+		|> Result.map (fun f -> `Fossil f)

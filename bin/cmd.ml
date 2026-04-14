@@ -29,7 +29,7 @@ module Global = struct
 			& info
 				["directory"]
 				~env
-				~doc: "Working directory for Nixtamal-related files (default: $PWD/nix/tamal)"
+				~doc: "Working directory for Nixtamal-related files (default: \\$PWD/nix/tamal)"
 				~docv: "PATH"
 		)
 
@@ -186,8 +186,9 @@ module Set_up = struct
 					$ nixpkgs_revision_arg
 				)
 		in
+		let eio_env = env in
 		Term.(
-			const (fun glb -> Global.run ~env glb @@ run)
+			const (fun glb -> Global.run ~env: eio_env glb @@ run)
 			$ Global.args
 			$ nixpkgs_arg
 		)
@@ -210,8 +211,9 @@ module Check_soundness = struct
 
 	let term ~env =
 		let open Cmdliner in
+		let eio_env = env in
 		Term.(
-			const (fun glb -> Global.run ~env glb @@ run)
+			const (fun glb -> Global.run ~env: eio_env glb @@ run)
 			$ Global.args
 		)
 
@@ -233,8 +235,9 @@ module Tweak = struct
 
 	let term ~env =
 		let open Cmdliner in
+		let eio_env = env in
 		Term.(
-			const (fun glb -> Global.run ~env glb @@ run)
+			const (fun glb -> Global.run ~env: eio_env glb @@ run)
 			$ Global.args
 		)
 
@@ -255,8 +258,9 @@ module Show = struct
 
 	let term ~env =
 		let open Cmdliner in
+		let eio_env = env in
 		Term.(
-			const (fun glb -> Global.run ~env glb @@ run)
+			const (fun glb -> Global.run ~env: eio_env glb @@ run)
 			$ Global.args
 		)
 
@@ -291,8 +295,9 @@ module Lock = struct
 				& info [] ~docv: "INPUT_NAME" ~doc: "Input names to lock (if already locked, will skip)."
 			)
 		in
+		let eio_env = env in
 		Term.(
-			const (fun glb force -> Global.run ~env glb @@ run force)
+			const (fun glb force -> Global.run ~env: eio_env glb @@ run force)
 			$ Global.args
 			$ force_arg
 			$ names_arg
@@ -315,8 +320,9 @@ module List_stale = struct
 
 	let term ~env =
 		let open Cmdliner in
+		let eio_env = env in
 		Term.(
-			const (fun glb -> Global.run ~env glb @@ run)
+			const (fun glb -> Global.run ~env: eio_env glb @@ run)
 			$ Global.args
 		)
 
@@ -345,10 +351,72 @@ module Refresh = struct
 				& info [] ~docv: "INPUT_NAME" ~doc: "Input names to refresh."
 			)
 		in
+		let eio_env = env in
 		Term.(
-			const (fun glb -> Global.run ~env glb @@ run)
+			const (fun glb -> Global.run ~env: eio_env glb @@ run)
 			$ Global.args
 			$ names_arg
+		)
+
+	let cmd ~env = Cmdliner.Cmd.v info (term ~env)
+end
+
+module Upgrade = struct
+	let info =
+		Cmdliner.Cmd.info
+			"upgrade"
+			~doc: "Upgrade lockfile & manifest to current schema version."
+			~exits: Cmdliner.Cmd.Exit.defaults
+			~man: common_man
+
+	let run ~env: _ ~domain_count: _ from to_ dry_run : unit =
+		let open Nixtamal in
+		match upgrade ?from ?to_ ~dry_run () with
+		| Ok () -> ()
+		| Error err -> failwith (Fmt.str "%a" Nixtamal.Error.pp err)
+
+	let term ~env =
+		let eio_env = env in
+		let open Cmdliner in
+		let version_conv : Nixtamal.Schema.Version.t Arg.conv =
+			Arg.conv
+				~docv: "VERSION"
+				((fun s ->
+					match Nixtamal.Schema.Version.of_string s with
+					| Some v -> Ok v
+					| None ->
+						let valid = Fmt.(array ~sep: comma Nixtamal.Schema.Version.pp) in
+						Error (`Msg (Fmt.str "Invalid version %s. Valid versions: %a" s valid Nixtamal.Schema.Version.versions))
+				),
+				 Nixtamal.Schema.Version.pp)
+		in
+		let from_arg =
+			let doc = "Upgrade from a specific version. Must match the lockfile version." in
+			Arg.(
+				value
+				& opt (some version_conv) None
+				& info ["from"] ~doc ~docv: "VERSION"
+			)
+		and to_arg =
+			let doc = "Upgrade to a specific version. Must be newer than --from." in
+			Arg.(
+				value
+				& opt (some version_conv) None
+				& info ["to"] ~doc ~docv: "VERSION"
+			)
+		and dry_run_arg =
+			Arg.(
+				value
+				& flag
+				& info ["dry-run"] ~doc: "Show what would be upgraded without making changes."
+			)
+		in
+		Term.(
+			const (fun glb -> Global.run ~env: eio_env glb @@ run)
+			$ Global.args
+			$ from_arg
+			$ to_arg
+			$ dry_run_arg
 		)
 
 	let cmd ~env = Cmdliner.Cmd.v info (term ~env)

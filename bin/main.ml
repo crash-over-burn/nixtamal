@@ -27,6 +27,7 @@ let cmd ~env =
 		Cmd.Lock.cmd ~env;
 		Cmd.List_stale.cmd ~env;
 		Cmd.Refresh.cmd ~env;
+		Cmd.Upgrade.cmd ~env;
 	]
 	in
 	Cmdliner.Cmd.group info subcommands

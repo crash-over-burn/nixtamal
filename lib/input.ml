@@ -137,6 +137,62 @@ module Pijul = struct
 	[@@deriving show, eq, make, qcheck]
 end
 
+(* Nilla is a Nix framework similar to flakes but with loaders and module system.
+	See: https://github.com/nilla-nix/nilla *)
+module Nilla = struct
+	let default_path = Template.make "./nilla.nix"
+
+	module Reference = struct
+		type t = [
+			| `Branch of UTF8.t
+			| `Ref of UTF8.t
+		]
+		[@@deriving show, eq, qcheck]
+	end
+
+	type t = {
+		repository: Template.t;
+		mirrors: Template.t list;
+		reference: Reference.t;
+		datetime: UTF8.t option; (* ISO 8601 RFC 3339 *)
+		latest_revision: UTF8.t option;
+		path: Template.t; (* path to nilla.nix, default: ./nilla.nix *)
+			[@default default_path]
+	}
+	[@@deriving show, eq, make, qcheck]
+
+	let default_latest_cmd nilla : Latest.Cmd.t =
+		let open Latest.Cmd in
+		let t = Template.make in
+		let git_ls_remote (ls_remote_args : Template.t list) : t =
+			let args = t "ls-remote" :: nilla.repository :: ls_remote_args in
+			~${prog = t "git"; args}
+			|: {prog = t "cut"; args = [t "-f1"]}
+		in
+		match nilla.reference with
+		| `Branch b -> git_ls_remote [t "--heads"; t b]
+		| `Ref r -> git_ls_remote [t "--refs"; t r]
+end
+
+module Fossil = struct
+	module Reference = struct
+		type t = [
+			| `Branch of UTF8.t
+			| `Tag of UTF8.t
+			| `Checkin of UTF8.t
+		]
+		[@@deriving show, eq, qcheck]
+	end
+
+	type t = {
+		repository: Template.t;
+		reference: Reference.t;
+		date: UTF8.t option;
+		latest_checkin: UTF8.t option;
+	}
+	[@@deriving show, eq, make, qcheck]
+end
+
 module Hash = struct
 	type algorithm =
 		| SHA256
@@ -181,6 +237,8 @@ module Kind = struct
 		| `Git of Git.t
 		| `Darcs of Darcs.t
 		| `Pijul of Pijul.t
+		| `Nilla of Nilla.t
+		| `Fossil of Fossil.t
 	]
 	[@@deriving show, eq, qcheck]
 end
@@ -200,6 +258,12 @@ let make_kind_pijul ~remote ?mirrors ~reference ?latest_state () =
 let make_kind_git ~repository ?mirrors ~reference ?latest_revision ?submodules ?lfs () =
 	`Git (Git.make ~repository ?mirrors ~reference ?latest_revision ?submodules ?lfs ())
 
+let make_kind_nilla ~repository ?mirrors ~reference ?latest_revision ?path () =
+	`Nilla (Nilla.make ?mirrors ~repository ~reference ?latest_revision ?path ())
+
+let make_kind_fossil ~repository ~reference ?date ?latest_checkin () =
+	`Fossil (Fossil.make ~repository ~reference ?date ?latest_checkin ())
+
 type t = {
 	name: Name.t;
 	kind: Kind.t;
@@ -217,8 +281,9 @@ let latest_cmd (input : t) : Latest.Cmd.t option =
 		(
 			match input.kind with
 			| `Git g -> Some (Git.default_latest_cmd g)
+			| `Nilla n -> Some (Nilla.default_latest_cmd n)
 			(* Would be nice if other tools did a better job letting you query the
-			remote repository directly, but that isn’t where we are *)
+			remote repository directly, but that isn't where we are *)
 			| _ -> None
 		)
 	| Some cmd -> Some cmd
@@ -287,6 +352,36 @@ let jg_models2 (input : t) (needle : string) : Jingoo.Jg_types.tvalue =
 				);
 				Option.iter (fun d -> Hashtbl.add htbl "datetime" (Tstr d)) p.datetime;
 				Option.iter (fun s -> Hashtbl.add htbl "state" (Tstr s)) p.latest_state;
+				htbl
+			end
+		| `Nilla n ->
+			begin
+				let htbl = make_hashtbl 4 in
+				(
+					match n.reference with
+					| `Branch b -> Hashtbl.add htbl "branch" (Tstr b)
+					| `Ref r -> Hashtbl.add htbl "ref" (Tstr r)
+				);
+				Option.iter (fun d -> Hashtbl.add htbl "datetime" (Tstr d)) n.datetime;
+				Hashtbl.add htbl "path" (Tstr (Template.take n.path));
+				Option.iter
+					(fun r ->
+						List.iter (fun key -> Hashtbl.add htbl key (Tstr r)) ["rev"; "revision"]
+					)
+					n.latest_revision;
+				htbl
+			end
+		| `Fossil f ->
+			begin
+				let htbl = make_hashtbl 3 in
+				(
+					match f.reference with
+					| `Branch b -> Hashtbl.add htbl "branch" (Tstr b)
+					| `Tag t -> Hashtbl.add htbl "tag" (Tstr t)
+					| `Checkin c -> Hashtbl.add htbl "checkin" (Tstr c)
+				);
+				Option.iter (fun d -> Hashtbl.add htbl "datetime" (Tstr d)) f.date;
+				Option.iter (fun c -> Hashtbl.add htbl "latest_checkin" (Tstr c)) f.latest_checkin;
 				htbl
 			end
 	in

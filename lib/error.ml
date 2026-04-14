@@ -25,6 +25,8 @@ type prefetch_method = [
 	| `Git
 	| `Darcs
 	| `Pijul
+	| `Nilla
+	| `Fossil
 ]
 [@@deriving show]
 
@@ -34,6 +36,7 @@ type prefetch_error = [
 	| `JSON_parsing of prefetch_method * string
 	| `Darcs_context of string
 	| `Run_exception of prefetch_method * exn * string
+	| `Not_implemented of prefetch_method * string
 ]
 [@@deriving show]
 
@@ -55,6 +58,7 @@ type error = [
 	| `Manifest of manifest_error
 	| `Lockfile of lockfile_error
 	| `Version_mismatch of string * string
+	| `Upgrade of string
 	| `Input_foreman of input_foreman_error
 ]
 [@@deriving show]
@@ -75,5 +79,7 @@ let pp ppf = function
 		Fmt.(pf ppf "%a" pp_lockfile_error err)
 	| `Version_mismatch (mnfst, lock) ->
 		Fmt.pf ppf "Version mismatch: Manifest@@%s & Lockfile@@%s" mnfst lock
-	| `Input_foreman (`CouldNotAdd name) ->
-		Fmt.pf ppf "Could not set %a" Name.pp name
+	| `Upgrade msg ->
+		Fmt.pf ppf "Upgrade error: %s" msg
+	| `Input_foreman err ->
+		Fmt.(pf ppf "%a" pp_input_foreman_error err)

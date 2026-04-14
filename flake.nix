@@ -6,19 +6,24 @@
   description = "Nixtamal - A Nix version pinning tool with first-class support for Darcs, Pijul, and other VCS systems";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/16c7794d0a28b5a37904d55bcca36003b9109aaa";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [
+            (import ./nix/overlay/default.nix)
+            (import ./nix/overlay/development.nix)
+            (import ./nix/overlay/check.nix)
+          ];
+        };
         
-        # Build nixtamal package using the traditional nix-build approach
-        # This preserves the existing build infrastructure
+        # Build nixtamal package using callPackage
         nixtamalPkg = pkgs.callPackage ./nix/package/nixtamal.nix {
-          # Override dependencies as needed
           nixtamal = null; # Prevent infinite recursion
         };
         

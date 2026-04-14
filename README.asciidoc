@@ -6,7 +6,7 @@
 :author: toastal
 
 == Pronunciation
-/nɪʃ.təˈmal/ _or_ /ˈnɪkstəˌmɑːl/
+/nɪks.təˈmal/ ("nix-tamal")
 
 Maker:: toastal
 
@@ -18,7 +18,11 @@ Languages::
 * KDL
 * JSON
 
-Version:: 0.0.9-alpha (alpha stage)
+Version:: 1.1-alpha (alpha stage)
+
+**Community-maintained fork**: Addressing the original project's lack of reasonable maintenance, this fork prioritizes long-term maintainability, compatibility, and active development.
+
+*Original project:* link:https://darcs.toastal.in.th/nixtamal/trunk/[darcs.toastal.in.th/nixtamal/trunk]
 
 == Purpose
 
@@ -47,6 +51,33 @@ Future goals (planned but not yet implemented):
 * provide a flake-like specification for project layout, but with less holes
 
 WARNING: As this software is in the alpha stage, the maker reserves the right make breaking changes file schemas & CLI API. Additionally, anything after tagged, the maker reserves the right to obliterate & amend patches.
+
+== Ongoing Integrations
+
+Nixtamal is being extended to support additional frameworks and tools:
+
+=== Nilla Framework
+
+https://github.com/nilla-nix/nilla[Nilla] is a Nix framework with loaders and module system. Nixtamal provides first-class support for Nilla inputs, including manifest serialization, lockfile integration, and prefetch functionality.
+
+[source,kdl]
+----
+my-input {
+    nilla {
+        repository "https://github.com/user/nilla-project.git"
+        branch "main"
+        path "./nilla.nix"
+    }
+}
+----
+
+Attributes:
+* `repository` - Git repository URL (templated)
+* `mirrors` - Repository mirrors (optional, templated)
+* `branch` or `ref` - Git reference point
+* `path` - Path to nilla.nix (defaults to `./nilla.nix`)
+
+Nixtamal prefetch validates that the nilla.nix file exists at the specified path within the fetched repository. The implementation uses standard nix prefetch tooling for consistency and reliability.
 
 == Quickstart
 
@@ -178,9 +209,9 @@ $ nix-build release.nix
 $ nix-build release.nix -A nixtamal
 ----
 
-=== Building with Flakes (New: Phase 1 Integration)
+=== Building with Flakes (New: Phase 1 Integration with flake-parts)
 
-Nixtamal now supports dual workflow compatibility, providing both traditional Nix and modern flake interfaces. The flake integration acts as an ecosystem bridge while maintaining nixtamal's core philosophy as a flake alternative/complement.
+Flakes use Determinate Nix and nixpkgs (github:DeterminateSystems/nix, NixOS/nixpkgs/nixos-unstable-small) for strong community support for Nix creator Eelco Dolstra's vision.
 
 Basic flake build
 

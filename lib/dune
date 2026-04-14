@@ -10,8 +10,10 @@
   jsont.bytesrw
   kdl
   logs
+  str
   saturn
   uri)
+ (flags (:standard -alert -deprecated))
  (preprocess
   (pps
    ppx_deriving.enum

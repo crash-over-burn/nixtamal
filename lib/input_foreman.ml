@@ -102,6 +102,33 @@ let pp_for_earthlings pff =
 					Option.fold ~none: [] ~some: (fun d -> ["datetime", d]) p.datetime;
 					Option.fold ~none: [] ~some: (fun s -> ["latest-state", s]) p.latest_state;
 				]
+			| `Nilla n ->
+				"nilla",
+				List.concat [
+					["repository", fill n.repository];
+					(List.map (fun m -> "mirror", fill m) n.mirrors);
+					(
+						match n.reference with
+						| `Branch b -> ["branch", b]
+						| `Ref r -> ["ref", r]
+					);
+					["path", fill n.path];
+					Option.fold ~none: [] ~some: (fun d -> ["datetime", d]) n.datetime;
+					Option.fold ~none: [] ~some: (fun r -> ["latest-revision", r]) n.latest_revision;
+				]
+			| `Fossil f ->
+				"fossil",
+				List.concat [
+					["repository", fill f.repository];
+					(
+						match f.reference with
+						| `Branch b -> ["branch", b]
+						| `Tag t -> ["tag", t]
+						| `Checkin c -> ["checkin", c]
+					);
+					Option.fold ~none: [] ~some: (fun d -> ["date", d]) f.date;
+					Option.fold ~none: [] ~some: (fun c -> ["latest-checkin", c]) f.latest_checkin;
+				]
 		in
 		let data_tuples : (string * string) list =
 			List.concat [
@@ -346,6 +373,21 @@ let prefetch ~env ~proc_mgr ~name () : (unit, error) result =
 					},
 					p_data.path
 				)
+			| `Nilla n, `Nilla n_data ->
+				Ok (
+					{input with
+						kind =
+						`Nilla {n with
+							latest_revision = Some n_data.rev;
+							datetime = n_data.datetime;
+						};
+						hash = {input.hash with
+							algorithm = n_data.hash.algorithm;
+							value = Some n_data.hash.value;
+						};
+					},
+					n_data.path
+				)
 			| _, _ -> failwith "Prefetch kind mismatch"
 		end
 	in
@@ -448,6 +490,8 @@ let lock_one ~env ~sw ~proc_mgr ~force ~name : (unit, error) result =
 			| `Git g -> Option.is_none g.latest_revision
 			| `Darcs d -> Option.is_none d.latest_weak_hash
 			| `Pijul p -> Option.is_none p.latest_state
+			| `Nilla n -> Option.is_none n.latest_revision
+			| `Fossil f -> Option.is_none f.latest_checkin
 	in
 	if needs_prefetch then
 		prefetch ~env ~proc_mgr ~name ()

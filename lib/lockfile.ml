@@ -291,6 +291,77 @@ module Pijul = struct
 		|> Object.finish
 end
 
+module Nilla = struct
+	type t = {
+		repository: URI.t;
+		mirrors: URI.t list;
+		datetime: string option;
+		latest_revision: string option;
+		path: string;
+	}
+	[@@deriving show, eq, qcheck]
+
+	let [@inline]to_lock
+			~(models : Input.jg_models2)
+			({repository; mirrors; datetime; latest_revision; path; _}: Input.Nilla.t)
+			: t
+		=
+		let to_uri = Fun.compose URI.of_string (Input.Template.fill ~models) in
+		{
+			repository = to_uri repository;
+			mirrors = List.map to_uri mirrors;
+			datetime;
+			latest_revision;
+			path = Input.Template.(fill ~models path);
+		}
+
+	let jsont : t Jsont.t =
+		let open Jsont in
+		Object.map ~kind: "Nilla_lock" (fun repository mirrors datetime latest_revision path ->
+			{repository; mirrors; datetime; latest_revision; path}
+		)
+		|> Object.mem "rp" URI.jsont ~enc: (fun i -> i.repository)
+		|> Object.mem "ms" (list URI.jsont) ~enc: (fun i -> i.mirrors)
+		|> Object.mem "dt" (option string) ~enc: (fun i -> i.datetime)
+		|> Object.mem "lr" (option string) ~enc: (fun i -> i.latest_revision)
+		|> Object.mem "pt" string ~enc: (fun i -> i.path)
+		|> Object.finish
+end
+
+module Fossil = struct
+	type t = {
+		repository: URI.t;
+		mirrors: URI.t list;
+		datetime: string option;
+		latest_checkin: string option;
+	}
+	[@@deriving show, eq, qcheck]
+
+	let [@inline]to_lock
+			~(models : Input.jg_models2)
+			({repository; reference; date; latest_checkin; _}: Input.Fossil.t)
+			: t
+		=
+		let to_uri = Fun.compose URI.of_string (Input.Template.fill ~models) in
+		{
+			repository = to_uri repository;
+			mirrors = []; (* Fossils don't have mirrors in upstream, so empty *)
+			datetime = date;
+			latest_checkin;
+		}
+
+	let jsont : t Jsont.t =
+		let open Jsont in
+		Object.map ~kind: "Fossil_lock" (fun repository mirrors datetime latest_checkin ->
+			{repository; mirrors; datetime; latest_checkin}
+		)
+		|> Object.mem "rp" URI.jsont ~enc: (fun i -> i.repository)
+		|> Object.mem "ms" (list URI.jsont) ~enc: (fun i -> i.mirrors)
+		|> Object.mem "dt" (option string) ~enc: (fun i -> i.datetime)
+		|> Object.mem "lc" (option string) ~enc: (fun i -> i.latest_checkin)
+		|> Object.finish
+end
+
 module Kind = struct
 	type t = [
 		| `File of File.t
@@ -298,6 +369,8 @@ module Kind = struct
 		| `Git of Git.t
 		| `Darcs of Darcs.t
 		| `Pijul of Pijul.t
+		| `Nilla of Nilla.t
+		| `Fossil of Fossil.t
 	]
 	[@@deriving show, eq, qcheck]
 
@@ -307,6 +380,8 @@ module Kind = struct
 		| `Git g -> `Git (Git.to_lock ~models g)
 		| `Darcs d -> `Darcs (Darcs.to_lock ~models d)
 		| `Pijul p -> `Pijul (Pijul.to_lock ~models p)
+		| `Nilla n -> `Nilla (Nilla.to_lock ~models n)
+		| `Fossil f -> `Fossil (Fossil.to_lock ~models f)
 
 	let jsont : t Jsont.t =
 		let open Jsont in
@@ -316,6 +391,8 @@ module Kind = struct
 			| `Git g -> encode_tag 2 Git.jsont g
 			| `Darcs d -> encode_tag 3 Darcs.jsont d
 			| `Pijul p -> encode_tag 4 Pijul.jsont p
+			| `Nilla n -> encode_tag 5 Nilla.jsont n
+			| `Fossil f -> encode_tag 6 Fossil.jsont f
 		and dec = function
 			| [|tag; value|] ->
 				begin
@@ -335,6 +412,12 @@ module Kind = struct
 						| 4 ->
 							Json.decode' Pijul.jsont value
 							|> Result.map (fun v -> `Pijul v)
+						| 5 ->
+							Json.decode' Nilla.jsont value
+							|> Result.map (fun v -> `Nilla v)
+						| 6 ->
+							Json.decode' Fossil.jsont value
+							|> Result.map (fun v -> `Fossil v)
 						| n ->
 							Error.msgf Meta.none "Unknown reference enum tag: %d" n
 					) with
