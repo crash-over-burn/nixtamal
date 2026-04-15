@@ -869,10 +869,11 @@ let read () =
 	let working_dir = Working_directory.get () in
 	let filepath = Eio.Path.(working_dir / filename) in
 	Logs.info (fun m -> m "Reading manifest @@ %a …" Eio.Path.pp filepath);
-	let* kdl =
+	let kdl_result =
 		Eio.Path.with_open_in filepath @@ fun flow ->
 		KDL.of_flow flow
 	in
+	let* kdl = kdl_result |> Result.map_error (fun (`ParseError msg) -> `Parsing [`ParseError msg]) in
 	let () = manifest := Some kdl in
 	Ok kdl
 

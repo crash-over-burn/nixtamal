@@ -11,8 +11,9 @@ let of_flow flow =
 			(fun buf -> Eio.Buf_read.take_all buf |> Kdl.of_string)
 			~max_size: max_int
 			flow
+		|> Result.ok
 	with
-		| exn -> failwith (Printexc.to_string exn)
+		| Kdl.Parse_error (msg, _) -> Error (`ParseError msg)
 
 let to_flow flow doc =
 	Eio.Buf_write.with_flow flow @@ fun buf ->
@@ -40,7 +41,7 @@ module L = KDL_lens_result
 module Valid = struct
 	type err = [
 		| L.lerr
-		| `ParseError of Kdl.error
+		| `ParseError of string
 		| `OneRequired of string list
 		| `OnlyOneOf of string list
 		| `InvalidLatestCmd of string

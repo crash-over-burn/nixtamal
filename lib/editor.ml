@@ -13,6 +13,6 @@ let find () =
 let run_on file =
 	match find () with
 	| ed when String.contains ed ' ' ->
-		Unix.execvp "/bin/sh" [|"/bin/sh"; "-c"; ed ^ " " ^ file|]
+		Unix.execvp "/bin/sh" [|"/bin/sh"; "-c"; ed ^ " " ^ Filename.quote file|]
 	| ed ->
 		Unix.execvp ed [|ed; file|]
