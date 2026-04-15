@@ -15,6 +15,26 @@ let acceptable_schemes = ["http"; "https"; "ftp"; "sftp"; "file"; "ssh"; "git"; 
 let is_acceptable_scheme scheme =
 	List.mem (String.lowercase_ascii scheme) acceptable_schemes
 
+(* URL-decode a string - handles %XX hex sequences *)
+let url_decode s =
+	let buf = Buffer.create (String.length s) in
+	let i = ref 0 in
+	while !i < String.length s do
+		if s.[!i] = '%' && !i + 2 < String.length s then
+			try
+				let hex = String.sub s (!i + 1) 2 in
+				let code = int_of_string ("0x" ^ hex) in
+				Buffer.add_char buf (Char.chr code);
+				i := !i + 3
+			with _ -> 
+				Buffer.add_char buf s.[!i];
+				incr i
+		else
+			Buffer.add_char buf s.[!i];
+			incr i
+	done;
+	Buffer.contents buf
+
 let contains_substring s substr =
 	let re = Str.regexp_string substr in
 	try
@@ -23,13 +43,19 @@ let contains_substring s substr =
 	with Not_found -> false
 
 let has_path_traversal uri =
-	let path_str = path uri in
-	contains_substring path_str ".." && (
-		contains_substring path_str "/../" ||
-		contains_substring path_str "\\..\\" ||
-		String.starts_with ~prefix:"../" path_str ||
-		String.ends_with ~suffix:"/.." path_str
-	)
+	let raw_path = path uri in
+	let decoded_path = url_decode raw_path in
+	(* Check both raw and decoded paths for traversal sequences *)
+	let check_path path_str =
+		contains_substring path_str ".." && (
+			contains_substring path_str "/../" ||
+			contains_substring path_str "\\..\\" ||
+			String.starts_with ~prefix:"../" path_str ||
+			String.ends_with ~suffix:"/.." path_str ||
+			String.ends_with ~suffix:"/.." (if String.length path_str > 0 && path_str.[0] = '/' then path_str else "/" ^ path_str)
+		)
+	in
+	check_path raw_path || check_path decoded_path
 
 let validate uri =
 	match scheme uri with
