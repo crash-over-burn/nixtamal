@@ -9,6 +9,40 @@ let jsont : t Jsont.t =
 	Jsont.string
 	|> Jsont.map ~kind: "URI" ~dec: of_string ~enc: to_string
 
+(* Validate URI for security concerns *)
+let acceptable_schemes = ["http"; "https"; "ftp"; "sftp"; "file"; "ssh"; "git"; "darcs"; "pijul"; "fossil"]
+
+let is_acceptable_scheme scheme =
+	List.mem (String.lowercase_ascii scheme) acceptable_schemes
+
+let contains_substring s substr =
+	let re = Str.regexp_string substr in
+	try
+		ignore (Str.search_forward re s 0);
+		true
+	with Not_found -> false
+
+let has_path_traversal uri =
+	let path_str = path uri in
+	contains_substring path_str ".." && (
+		contains_substring path_str "/../" ||
+		contains_substring path_str "\\..\\" ||
+		String.starts_with ~prefix:"../" path_str ||
+		String.ends_with ~suffix:"/.." path_str
+	)
+
+let validate uri =
+	match scheme uri with
+	| Some scheme when is_acceptable_scheme scheme ->
+		if has_path_traversal uri then
+			Error (`Path_traversal (path uri))
+		else
+			Ok ()
+	| Some scheme ->
+		Error (`Invalid_scheme scheme)
+	| None ->
+		Error (`Invalid_scheme "missing")
+
 (* good enough URI generation for now for this *)
 let gen =
 	let open QCheck.Gen in
