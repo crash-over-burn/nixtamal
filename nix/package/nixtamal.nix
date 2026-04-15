@@ -102,6 +102,7 @@ ocamlPackages.buildDunePackage {
 
    checkInputs = with ocamlPackages; [
       alcotest
+      bisect_ppx
       qcheck
       qcheck-alcotest
    ];

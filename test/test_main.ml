@@ -5,4 +5,7 @@
 let () =
 	Alcotest.run "Nixtamal" [
 		"Input", Test_input.suite;
+		"Upgrade", Test_upgrade.suite;
+		"Fossil", Test_fossil.suite;
+		"Lockfile", Test_lockfile.suite;
 	]

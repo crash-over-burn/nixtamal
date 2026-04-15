@@ -1,0 +1,35 @@
+name: coverage
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-with-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Run tests with bisect_ppx
+        run: |
+          nix develop --option builders '' --command sh -c 'BISECT_ENABLE=YES dune runtest --instrument-with bisect_ppx --force'
+
+      - name: Generate coverage reports
+        run: |
+          nix develop --option builders '' --command sh -c 'bisect-ppx-report summary --coverage-path _build/default/test > coverage-summary.txt'
+          nix develop --option builders '' --command sh -c 'bisect-ppx-report html --coverage-path _build/default/test --tree -o _coverage'
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage-summary.txt
+            coverage/
+            _coverage/
+          if-no-files-found: warn

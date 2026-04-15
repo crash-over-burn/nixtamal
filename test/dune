@@ -1,4 +1,6 @@
 (test
  (name test_main)
  (flags (:standard -alert -deprecated))
+ (instrumentation
+  (backend bisect_ppx))
  (libraries nixtamal alcotest qcheck qcheck-alcotest))

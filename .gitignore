@@ -1,2 +1,4 @@
 result
 llm/
+_build/
+_coverage/

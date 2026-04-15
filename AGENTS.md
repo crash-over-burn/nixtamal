@@ -2,7 +2,13 @@
 
 ## Documentation
 
-User-facing documentation is in `README.asciidoc`. Agent notes go in `./llm/`.
+User-facing documentation is in `README.asciidoc`. Agent notes go in `./llm/` (note: this folder is now gitignored for security).
+
+## Contact
+
+Website: https://nixtamal.tech (launching soon)
+
+Community XMPP MUC: xmpp:nixtamal@chat.toastal.in.th?join
 
 ## Build/Lint/Test Commands
 

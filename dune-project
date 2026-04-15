@@ -35,10 +35,11 @@
    (and
     :with-test
     (>= 0.91)))
-  (qcheck-alcotest
-   (and
-    :with-test
-    (>= 0.91))))
- (tags ("nix")))
+   (qcheck-alcotest
+    (and
+     :with-test
+     (>= 0.91)))
+   (bisect_ppx :with-test))
+  (tags ("nix")))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html

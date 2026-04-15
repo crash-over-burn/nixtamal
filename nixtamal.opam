@@ -9,7 +9,7 @@ tags: ["nix"]
 depends: [
   "dune" {>= "3.20"}
   "camomile"
-  "cmdliner" {>= "2.0.0"}
+  "cmdliner"
   "eio"
   "eio_main"
   "fmt"
@@ -23,6 +23,7 @@ depends: [
   "alcotest" {with-test}
   "qcheck" {with-test & >= "0.91"}
   "qcheck-alcotest" {with-test & >= "0.91"}
+  "bisect_ppx" {with-test}
   "odoc" {with-doc}
 ]
 build: [

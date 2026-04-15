@@ -29,7 +29,7 @@
         
         # Development shell using the same approach as shell.nix
         devShell = pkgs.mkShell {
-          buildInputs = nixtamalPkg.buildInputs or [];
+          buildInputs = (nixtamalPkg.buildInputs or []) ++ (nixtamalPkg.checkInputs or []);
           nativeBuildInputs = nixtamalPkg.nativeBuildInputs or [];
         };
       in
@@ -47,6 +47,32 @@
         checks = {
           # Basic check that the package builds
           nixtamal-build = nixtamalPkg;
+
+          # Explicit test check
+          nixtamal-test = nixtamalPkg;
+
+          # Coverage instrumentation sanity check
+          nixtamal-coverage = pkgs.runCommand "nixtamal-coverage-check"
+            {
+              nativeBuildInputs = (nixtamalPkg.nativeBuildInputs or [ ])
+                ++ (nixtamalPkg.buildInputs or [ ])
+                ++ (with pkgs.ocamlPackages; [
+                  bisect_ppx
+                  dune_3
+                ]);
+            }
+            ''
+              export HOME="$TMPDIR"
+              cp -r ${nixtamalPkg.src} source
+              chmod -R u+w source
+              cd source
+
+              BISECT_ENABLE=YES dune runtest --instrument-with bisect_ppx --force
+              bisect-ppx-report summary --coverage-path _build/default/test > coverage-summary.txt
+
+              mkdir -p "$out"
+              cp coverage-summary.txt "$out"/
+            '';
         };
 
         # Library outputs for ecosystem integration
