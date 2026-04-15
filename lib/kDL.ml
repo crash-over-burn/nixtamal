@@ -5,13 +5,15 @@
 (* extend & fix casing for ocaml-kdl *)
 include Kdl
 
-let of_flow flow =
+let of_flow flow : (t, [> `ParseError of string]) result =
 	try
-		Eio.Buf_read.parse_exn
+		match Eio.Buf_read.parse_exn
 			(fun buf -> Eio.Buf_read.take_all buf |> Kdl.of_string)
 			~max_size: max_int
 			flow
-		|> Result.ok
+		with
+		| Ok doc -> Ok doc
+		| Error _ -> Error (`ParseError "KDL parse error")
 	with
 		| Kdl.Parse_error (msg, _) -> Error (`ParseError msg)
 

@@ -53,9 +53,7 @@ let read_manifest_and_lockfile () : (Name.Name.t list, error) result =
 			| Ok(kdl : KDL.t) ->
 				Manifest.document_to_t kdl
 				|> Result.map_error (fun err -> `Parsing err)
-			| Error(e : KDL.error) ->
-				let v_errs : KDL.Valid.err list = [`ParseError e] in
-				Error (`Parsing v_errs)
+			| Error err -> Error err
 		end
 	in
 	let* lockfile_opt =
@@ -350,7 +348,7 @@ let upgrade ?from ?(to_ = Schema.Version.current) ?(dry_run = false) () : (unit,
 			let* () =
 				match Manifest.read () with
 				| Ok _ -> Logs.info (fun m -> m "Manifest verified."); Ok ()
-				| Error e -> Error (`Manifest (`Parsing [`ParseError e]))
+				| Error e -> Error (`Manifest e)
 			in
 			let* () =
 				match Lockfile.read () with

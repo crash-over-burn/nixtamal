@@ -865,17 +865,14 @@ let exists () : bool =
 	Eio.Path.is_file filepath
 
 let read () =
-	let (let*) = Result.bind in
 	let working_dir = Working_directory.get () in
 	let filepath = Eio.Path.(working_dir / filename) in
 	Logs.info (fun m -> m "Reading manifest @@ %a …" Eio.Path.pp filepath);
-	let kdl_result =
-		Eio.Path.with_open_in filepath @@ fun flow ->
-		KDL.of_flow flow
-	in
-	let* kdl = kdl_result |> Result.map_error (fun (`ParseError msg) -> `Parsing [`ParseError msg]) in
-	let () = manifest := Some kdl in
-	Ok kdl
+	match Eio.Path.with_open_in filepath KDL.of_flow with
+	| Error (`ParseError msg) -> Error (`Parsing [`ParseError msg])
+	| Ok kdl ->
+		let () = manifest := Some kdl in
+		Ok kdl
 
 let make ?(version = "0.1.1") () =
 	Logs.app (fun m -> m "Making manifest file @@ version:%s" version);
