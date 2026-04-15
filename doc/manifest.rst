@@ -6,7 +6,7 @@ Setting up for pinning down inputs
 --------------------------------------------------------------------------------
 
 :author: toastal
-:version: 0.1.1
+:version: 0.2.0
 
 .. role:: ab
 .. role:: ac
@@ -18,13 +18,19 @@ Synopsis
 Nixtamal uses :ac:`KDL` for its manifest describing inputs. At the highest
 level, this includes:
 
-• manifest version
+• manifest version (supports schema upgrades via ``nixtamal upgrade``)
 • default hashing algorithm
 • list of inputs
 
-  	• the input kind & its specific attributes
-  	• a command to check if ‘latest’
+  	• the input kind & its specific attributes (Git, Darcs, Pijul, Fossil, etc.)
+  	• a command to check if 'latest'
   	• hashing information
+
+.. note::
+
+   The manifest uses schema versioning (currently 0.2.0). When upgrading
+   nixtamal, use ``nixtamal upgrade`` to migrate manifests between schema
+   versions. The upgrade command creates backups and supports rollback.
 
 .. note::
 
@@ -77,7 +83,7 @@ At a high level these should be seen as
 “kind”
 	There are specific nodes for each different type of supported
 	fetchers/prefetchers: ``file``, ``archive``, ``git``, ``darcs``, ``pijul``
-	(with more to come in the future).
+	``fossil``, ``nilla``.
 ``hash``
 	An optional node for hash algorithm information for a input. The
 	``algorithm`` property will be used when prefetching, locking, & for
@@ -162,6 +168,15 @@ Pijul
 	``channel`` *or* ``state`` *or* ``change`` (not recommended) node as the
 	reference point for getting stable reference; if unsure, try ``channel
 	main``
+
+Fossil
+--------------------------------------------------------------------------------
+
+``repository``
+	`Templated node`_ repository reference for the input
+“reference”
+	``branch`` *or* ``tag`` *or* ``checkin`` node as the reference point for
+	getting stable reference; checkins are SHA1 hashes of commits
 
 
 Templated node
